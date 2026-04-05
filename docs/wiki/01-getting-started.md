@@ -29,14 +29,14 @@ Pick one of three paths.
 Copies the template without the git history, so you start with a clean slate.
 
 ```bash
-npx degit furiolabs/furio-kit my-app
+npx degit furio-labs/furio-kit my-app
 cd my-app
 git init && git add -A && git commit -m "chore: init from furio-kit"
 ```
 
 ### Option B — GitHub template
 
-1. Open [furiolabs/furio-kit](https://github.com/furiolabs/furio-kit) on GitHub.
+1. Open [furio-labs/furio-kit](https://github.com/furio-labs/furio-kit) on GitHub.
 2. Click **Use this template** > **Create a new repository**.
 3. Clone your new repository locally.
 
@@ -50,7 +50,7 @@ cd my-app
 Clone and strip the upstream history yourself.
 
 ```bash
-git clone https://github.com/furiolabs/furio-kit.git my-app
+git clone https://github.com/furio-labs/furio-kit.git my-app
 cd my-app
 rm -rf .git
 git init && git add -A && git commit -m "chore: init from furio-kit"

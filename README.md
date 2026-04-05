@@ -1,11 +1,13 @@
 # furio-kit
 
-Enterprise React boilerplate by FurioLabs. Built on Next.js 16 App Router with React Server Components, Feature-Sliced Design, and a pluggable `@org/ui-kit` design system adapter.
+Enterprise React boilerplate by [FurioLabs](https://furiolabs.com). Built on Next.js 16 App Router with React Server Components, Feature-Sliced Design, and a pluggable `@org/ui-kit` design system adapter.
+
+**Author:** [Sandro A. Gomez Araya](https://github.com/sandrogomez)
 
 ## Bootstrap a new project
 
 ```bash
-npx degit sandrogomez/furio-kit my-app
+npx degit furio-labs/furio-kit my-app
 cd my-app
 cp .env.example .env.local
 pnpm install

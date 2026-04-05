@@ -6,7 +6,7 @@ furio-kit uses git worktrees so each feature branch gets its own isolated direct
 
 ```bash
 # 1. Clone the repo
-git clone git@github.com:sandrogomez/furio-kit.git
+git clone git@github.com:furio-labs/furio-kit.git
 cd furio-kit
 
 # 2. Create a worktree for your branch
