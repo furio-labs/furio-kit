@@ -338,7 +338,7 @@ A dependency is a candidate to hold when: it requires changes to more than a han
 If you bootstrapped from furio-kit using `degit`, there is no upstream remote by default. Add it when you want to pull in template updates:
 
 ```bash
-git remote add upstream https://github.com/furiolabs/furio-kit.git
+git remote add upstream https://github.com/furio-labs/furio-kit.git
 git fetch upstream
 git merge upstream/main --allow-unrelated-histories
 ```
