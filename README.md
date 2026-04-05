@@ -84,15 +84,8 @@ pnpm audit --fix   # auto-fix where possible
 ```
 
 ## Documentation
-
 - **[Wiki](./docs/wiki/home.md)** — step-by-step guides for building on furio-kit
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** — PR workflow and development setup
 - **[CLAUDE.md](./CLAUDE.md)** — full technical reference for AI assistants
 
-## Maintainer setup (one-time)
 
-If you are setting up furio-kit as the canonical template:
-
-1. **GitHub → Settings → check "Template repository"** — enables the "Use this template" button
-2. **Branch protection on `main`** — require PR, require CI (`ci.yml`) to pass, no direct push
-3. Contributors use worktrees — see [CONTRIBUTING.md](./CONTRIBUTING.md)
