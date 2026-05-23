@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run Biome lint before every commit.
+# Fails fast — fix lint errors before committing.
+
+echo "Running lint..."
+pnpm lint
