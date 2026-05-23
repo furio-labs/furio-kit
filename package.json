@@ -10,7 +10,8 @@
     "format": "biome format . --write",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate": "plop"
+    "generate": "plop",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.13",
