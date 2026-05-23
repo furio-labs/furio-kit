@@ -268,9 +268,10 @@ Merging the Release PR triggers a second run that creates a GitHub Release and g
 
 | Commit type | Bump |
 |---|---|
-| `security:`, `fix:`, `build:`, `chore:` | patch (0.1.0 → 0.1.1) |
+| `security:`, `fix:`, `build:` | patch (0.1.0 → 0.1.1) |
 | `feat:` | minor (0.1.0 → 0.2.0) |
 | `feat!:` or `BREAKING CHANGE:` footer | major (0.1.0 → 1.0.0) |
+| `chore:`, `test:`, `ci:`, `style:` | hidden — no release triggered |
 
 ### Security commit type
 

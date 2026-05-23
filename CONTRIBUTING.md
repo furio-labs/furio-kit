@@ -210,6 +210,8 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 | `docs:` | Documentation only | Documentation |
 | `chore:` | Maintenance (hidden from changelog) | — |
 | `ci:` | CI/CD changes (hidden from changelog) | — |
+| `test:` | Test additions or changes (hidden from changelog) | — |
+| `style:` | Formatting, whitespace (hidden from changelog) | — |
 
 **Security PRs:** When Dependabot opens a PR for a security advisory, rename its title from `build(deps):` to `security:` before merging so it appears in the `🔒 Security` section.
 
