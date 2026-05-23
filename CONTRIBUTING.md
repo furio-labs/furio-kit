@@ -195,6 +195,28 @@ See the adapter files for required env vars and install instructions.
 
 ---
 
+## Commit Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/). The `release-please` workflow reads commit types to determine the version bump and populate the changelog.
+
+| Type | When to use | Changelog section |
+|---|---|---|
+| `security:` | Security patch (CVE, advisory, sanitization fix) | 🔒 Security — always at the top |
+| `feat:` | New capability | Features |
+| `fix:` | Bug fix | Bug Fixes |
+| `build(deps):` | Dependency update (Dependabot) | Build System |
+| `refactor:` | Internal restructure, no behavior change | Code Refactoring |
+| `perf:` | Performance improvement | Performance |
+| `docs:` | Documentation only | Documentation |
+| `chore:` | Maintenance (hidden from changelog) | — |
+| `ci:` | CI/CD changes (hidden from changelog) | — |
+
+**Security PRs:** When Dependabot opens a PR for a security advisory, rename its title from `build(deps):` to `security:` before merging so it appears in the `🔒 Security` section.
+
+**Breaking changes:** Add `!` after the type (`feat!:`) or a `BREAKING CHANGE:` footer to trigger a major version bump.
+
+---
+
 ## Commands
 
 ```bash

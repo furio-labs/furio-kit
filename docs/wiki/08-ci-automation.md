@@ -16,6 +16,7 @@ Six workflows run in `.github/workflows/`.
 | Architecture Guard | `architecture-guard.yml` | PR to `main` (any `src/` change) | FSD layer violations, adapter pattern, barrel exports, deep imports | Yes |
 | Dependabot Auto-Merge | `dependabot-auto.yml` | Any Dependabot PR | Auto-merges patch/minor, labels major for review | No (enables auto-merge) |
 | Stale | `stale.yml` | Daily 06:00 UTC | Labels PRs/issues inactive for 14 days, closes after 7 more | N/A |
+| Release Please | `release-please.yml` | push to `main` | Opens/updates a Release PR that bumps `package.json` version and updates `CHANGELOG.md`; merging the PR creates a GitHub Release and tag | No |
 
 ---
 
@@ -254,7 +255,45 @@ Pass context in the prompt or as arguments as needed. The agent will follow the 
 
 ---
 
-## 7. Copilot instructions
+## 7. Release Please
+
+`release-please.yml` runs on every push to `main`. It reads Conventional Commits since the last release and opens (or updates) a single "Release PR" titled `chore(main): release X.Y.Z`. The PR contains:
+
+- A `package.json` version bump
+- An updated `CHANGELOG.md` with entries grouped by commit type
+
+Merging the Release PR triggers a second run that creates a GitHub Release and git tag (`vX.Y.Z`). Template users who have enabled "Watch → Releases" on the repository receive a GitHub notification at this point.
+
+### Version bump rules
+
+| Commit type | Bump |
+|---|---|
+| `security:`, `fix:`, `build:`, `chore:` | patch (0.1.0 → 0.1.1) |
+| `feat:` | minor (0.1.0 → 0.2.0) |
+| `feat!:` or `BREAKING CHANGE:` footer | major (0.1.0 → 1.0.0) |
+
+### Security commit type
+
+Use `security:` (not `fix:`) for security patches. Entries of this type appear in a dedicated `🔒 Security` section at the top of the changelog, making them easy to spot when template users decide whether to apply a change.
+
+```
+security: update next to patch CVE-2025-XXXX
+security: sanitize user input in search-action to address GHSA-xxxx-xxxx-xxxx
+```
+
+When Dependabot opens a PR that is security-driven (an advisory, not a routine version bump), rename the PR title from `build(deps): bump X` to `security: bump X to patch GHSA-…` before merging.
+
+### Configuration files
+
+| File | Purpose |
+|---|---|
+| `release-please-config.json` | Changelog section order and visibility |
+| `.release-please-manifest.json` | Tracks the last released version |
+| `CHANGELOG.md` | Auto-generated; do not edit by hand |
+
+---
+
+## 8. Copilot instructions
 
 `.github/copilot/instructions.md` provides project-specific context that GitHub Copilot uses when generating suggestions in this repository. It covers:
 
