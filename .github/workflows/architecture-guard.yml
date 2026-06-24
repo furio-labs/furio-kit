@@ -161,7 +161,7 @@ jobs:
       # ── Post PR comment ─────────────────────────────────────────────────────
       - name: Post PR comment
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           FSD_STATUS: ${{ steps.fsd-layers.outputs.status }}
           ADAPTER_STATUS: ${{ steps.adapter.outputs.status }}
