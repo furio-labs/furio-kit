@@ -225,7 +225,7 @@ Triggers are scheduled or on-demand agents defined as markdown files in `.claude
 
 **`weekly-health.md`** — Monday 09:00
 
-Runs `pnpm outdated`, lists open Dependabot PRs that were not auto-merged, runs `pnpm audit`, and checks that `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, and `package.json` version ranges are consistent with installed packages. Creates a GitHub issue titled `Weekly Health Report - YYYY-MM-DD` with label `maintenance`.
+Runs `pnpm outdated`, lists open Dependabot PRs that were not auto-merged, runs `pnpm audit`, and checks that `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, and `package.json` version ranges are consistent with installed packages. Also verifies the code graph index is current (`index_status`), refreshing it if `head_sha` has drifted from `HEAD`. Creates a GitHub issue titled `Weekly Health Report - YYYY-MM-DD` with label `maintenance`.
 
 **`dep-review.md`** — on-demand (`schedule: null`)
 
@@ -240,6 +240,8 @@ Performs semantic architecture checks that regex-based CI cannot catch:
 - `"use client"` directives in `widgets/` or `views/` files (boundary should be pushed down)
 - Server Components using hooks, event handlers, or browser APIs
 - Server Actions not following the `camelCaseAction` naming convention
+
+Where a code graph index is available, it cross-references these regex findings against call-graph evidence (`search_graph`, `get_architecture`, `trace_path`, `detect_changes`). These steps are advisory — the trigger still completes its checks if no index server is configured.
 
 Creates a GitHub issue titled `Architecture Review - YYYY-MM-DD` with label `architecture`.
 

@@ -11,7 +11,7 @@
 
 This document examines the architectural strategy underpinning a modern enterprise frontend platform. The approach rests on six interlocking decisions: rendering work is shifted from client to server by default; the codebase is organized by explicit, enforced boundaries rather than by file type; all external dependencies are isolated behind abstraction layers; state ownership is partitioned categorically so that each concern is held by exactly one tool; security is enforced as a structural constraint rather than documented as a recommendation; and provider scoping eliminates unnecessary client initialization on public routes. The result is a system optimized for long-term maintainability and operational predictability at the cost of steeper initial cognitive investment and tighter constraints on individual developer freedom.
 
-A seventh decision — the adoption of a live code knowledge graph (GitNexus) — provides runtime intelligence about the call graph, enabling impact analysis before edits and call-graph-aware refactoring that complements the structural constraints above.
+A seventh decision — the adoption of a live code knowledge graph (GitNexus) — was intended to provide runtime intelligence about the call graph, enabling impact analysis before edits and call-graph-aware refactoring that complements the structural constraints above. **This decision was reversed on 2026-07-25: the tool selected to implement it carried a noncommercial license incompatible with this MIT-licensed, commercially deployed platform. See the §8 postscript.**
 
 ---
 
@@ -179,6 +179,8 @@ There is also a maintenance obligation: the scaffolding templates must be kept i
 
 ## 8. Live Code Intelligence: The Knowledge Graph Complement
 
+> **Note:** The implementation described in this section (GitNexus) was withdrawn on 2026-07-25 because its PolyForm Noncommercial license was incompatible with furio-kit's MIT license and commercial purpose. The strategic argument stands and the capability was re-sourced; see the postscript at the end of this section.
+
 ### The Limits of Static Rules
 
 Static analysis — whether regex-based CI checks or TypeScript's type system — operates on the structure of individual files. It cannot answer questions about dynamic behavior: which functions call this function across the entire codebase, what would break if this symbol's signature changed, which execution flows does this module participate in. These questions are essential for safe refactoring in a large, interconnected codebase, and they are unanswerable by static file inspection alone.
@@ -201,6 +203,22 @@ The graph is also gitignored — each developer maintains their own local copy. 
 
 The appropriate mental model is that the knowledge graph is a development-time instrument, not a runtime enforcement mechanism. It complements the static constraints above rather than replacing them: the graph tells you what is risky before you act, but the CI checks tell you whether you acted correctly.
 
+### Postscript: The Specific Implementation Was Withdrawn (2026-07-25)
+
+The strategic argument above stands. The specific tool that implemented it — GitNexus — was removed from furio-kit on 2026-07-25. The reason was licensing, and it is worth recording precisely, because it generalizes to any architecture that makes tooling mandatory.
+
+**The license conflict.** GitNexus is distributed under the PolyForm Noncommercial License 1.0.0, which grants use only for noncommercial purposes. furio-kit is MIT-licensed and exists for a single purpose: to be cloned and deployed as a commercial enterprise frontend. A boilerplate whose entire audience is commercial cannot carry a dependency whose license excludes commercial use.
+
+**Mandatory tooling propagates its license downstream.** This is the part that makes the conflict architectural rather than merely administrative. The instrumentation was not offered as a convenience — it was *required*. The instruction files carried `MUST` and `NEVER` rules demanding an impact query before every symbol edit and a change-detection query before every commit, reinforced by a pre-edit hook. Any organization adopting this MIT-licensed template for commercial work and following the workflow the template itself prescribed would have been using a noncommercial-licensed tool commercially. The boilerplate would have been inducing its own adopters into a license violation.
+
+**A permissive license is a promise about the whole delivered workflow.** Publishing under MIT communicates that a recipient may use the work commercially without further obligation. That promise is only meaningful if it covers what the project *tells* recipients to do, not merely the source files it ships. Mandated tooling is part of the delivered thing. Auditing the license of every direct dependency is standard practice; the omission here was failing to extend that audit to tooling that appeared only in instruction files and hooks, which are not scanned by dependency tooling and carry no manifest entry.
+
+**No technical remedy applied.** This distinguishes the failure from an ordinary integration problem. Refreshing the index, registering the server, or consolidating the overlapping indexers would have left the licensing position exactly where it was. The available resolutions were to remove the dependency or to strip it of every mandate and make it a purely optional, individually installed developer tool. Since it was load-bearing throughout the instruction files, removal was the honest option.
+
+**What was retained.** The capability was not abandoned, only re-sourced. Call-graph relationships, blast radius, and change detection moved to codebase-memory-mcp; symbol-precise references and renames moved to a language server. Critically, the *structure* of the integration changed as well: the replacements are optional, individually installed, not distributed with the boilerplate, and mandated by nothing. The instruction files now state that every task must remain completable without them.
+
+The revised principle: *instrumentation must remain optional, and anything an instruction file makes mandatory must be license-compatible with the project's own distribution terms.* A tool that a repository requires is not a private choice by an individual developer — it is a term the repository imposes on everyone downstream, and it must be licensed accordingly.
+
 ---
 
 ## 9. Summary of Strategic Tradeoffs
@@ -215,7 +233,7 @@ The appropriate mental model is that the knowledge graph is a development-time i
 | Provider scoping via route groups | Root layout is a pure shell; providers scoped to need | Additional layout file; route group mental model required |
 | Static RBAC permission map | Permissions auditable in one file; no policy DB | Not appropriate for dynamic admin-configured permissions |
 | Convention enforcement via scaffolding + CI | Consistent structure; violations block merge | Template maintenance; rigidity for unusual shapes |
-| Live code knowledge graph | Impact analysis before edits; call-graph renaming | Index drifts; local-only; requires explicit refresh |
+| Live code knowledge graph *(GitNexus implementation withdrawn 2026-07-25 — see §8 postscript)* | Impact analysis before edits; call-graph renaming | Index drifts; local-only; requires explicit refresh. Decisively: **mandated tooling must be license-compatible with the project's own distribution terms** — GitNexus's noncommercial license was not |
 
 ---
 
@@ -236,6 +254,10 @@ The architecture examined in this document is a coherent response to a specific 
 The central argument of the architecture is that predictability is more valuable than flexibility at scale. The rules are strict, the boundaries are enforced, and the paths are well-defined. This produces a system where the behavior of the whole is more knowable than the sum of its parts — which is, ultimately, the defining characteristic of maintainable software.
 
 The additions documented in this revision — security as structural enforcement, provider scoping through route groups, static RBAC, and a live code knowledge graph — extend this argument to dimensions the original architecture did not address explicitly. Security constraints and scope isolation now carry the same structural force as layer boundaries and adapter patterns. The knowledge graph adds a dynamic complement to static analysis: where CI enforces what is correct after the fact, the graph surfaces what is risky before the fact. Together, they close the feedback loop from architectural intention to development practice.
+
+The knowledge graph is the one addition that did not survive contact with practice in its original form. The GitNexus implementation was withdrawn on 2026-07-25 — not because the idea failed, but because its PolyForm Noncommercial license was irreconcilable with an MIT-licensed template built for commercial deployment (see the §8 postscript). The capability was re-sourced to optional, individually installed tooling.
+
+The episode sharpens the argument rather than weakening it. Security enforcement and provider scoping are *structural* — they live in code and CI, they hold regardless of any developer's local environment, and they impose nothing on adopters beyond the source itself. The knowledge graph was *instrumental*, and the architecture's mistake was not adopting it but **mandating** it. A tool a repository requires stops being a private developer preference and becomes a term the repository imposes on everyone downstream — inheriting that tool's licensing constraints along with its capabilities. Instrumental aids belong in an architecture; they belong there as options, and whatever an instruction file makes compulsory must be licensed as permissively as the project itself.
 
 ---
 

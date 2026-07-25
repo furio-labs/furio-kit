@@ -9,13 +9,13 @@ You are an architecture reviewer for furio-kit. Perform semantic checks that go 
 
 ## Steps
 
-0. **GitNexus freshness check:** Read `gitnexus://repo/furio-kit/context`. If the index is stale, run `npx gitnexus analyze` before proceeding.
+0. **Index freshness check:** Run `index_status({ project: "furio-kit" })`. If `head_sha` does not match current `HEAD`, run `index_repository({ repo_path: ".", mode: "full", name: "furio-kit" })` before proceeding.
 
-1. **GitNexus semantic query:** Run `gitnexus_query({query: "Zustand store state management"})` and `gitnexus_query({query: "use client boundary server component"})`. Note any suspicious execution flows that cross expected layer boundaries. These complement the regex checks below with call-graph evidence.
+1. **Semantic graph query:** Run `search_graph({ project: "furio-kit", query: "zustand store" })`, then `get_architecture({ project: "furio-kit", aspects: ["layers", "boundaries", "clusters"] })`. Note any dependency edges that cross expected FSD layer boundaries. These complement the regex checks below with call-graph evidence.
 
-2. **Zustand state audit:** Read all files in `src/shared/model/` and any file importing from `zustand`. Verify that Zustand stores only contain UI state (sidebar open, theme, modal visibility, etc.). Flag any store that holds server-fetched data (user profiles, API responses, entity lists). For any flagged store, run `gitnexus_context({name: "storeName"})` to identify all callers.
+2. **Zustand state audit:** Read all files in `src/shared/model/` and any file importing from `zustand`. Verify that Zustand stores only contain UI state (sidebar open, theme, modal visibility, etc.). Flag any store that holds server-fetched data (user profiles, API responses, entity lists). For any flagged store, run `trace_path({ project: "furio-kit", function_name: "storeName", mode: "calls", direction: "inbound" })` to identify all callers.
 
-3. **Zod validation audit:** Read all files in `src/entities/*/api/`. For each data-fetching function, verify it parses the response through a Zod schema before returning. Flag any function that returns raw API data without `.parse()` or `.safeParse()`. Run `gitnexus_query({query: "entity api fetch Zod parse"})` to cross-reference what the call graph shows.
+3. **Zod validation audit:** Read all files in `src/entities/*/api/`. For each data-fetching function, verify it parses the response through a Zod schema before returning. Flag any function that returns raw API data without `.parse()` or `.safeParse()`. Run `search_code({ project: "furio-kit", pattern: "safeParse|\\.parse\\(", regex: true, path_filter: "^src/entities/" })` to cross-reference what the call graph shows.
 
 4. **Client boundary audit:** Search for `"use client"` directives. Flag any file in `src/widgets/` or `src/views/` that is marked `"use client"` — these should be Server Components. The `"use client"` boundary should be pushed down to `src/features/` or `src/shared/ui/` level.
 
@@ -26,12 +26,12 @@ You are an architecture reviewer for furio-kit. Perform semantic checks that go 
 
 6. **Server Action audit:** Search for `"use server"` directives. Verify they are in files under `actions/` directories and that the functions follow the `camelCaseAction` naming convention.
 
-7. **GitNexus change detection:** Run `gitnexus_detect_changes()` to identify what has changed since the last review. Include any HIGH or CRITICAL impact symbols in the report.
+7. **Change detection:** Run `detect_changes({ project: "furio-kit", since: "HEAD~20" })` to identify what has changed since the last review. Include any high-impact symbols in the report.
 
 8. **Report:** Create a GitHub issue with:
    - Title: `Architecture Review - YYYY-MM-DD`
    - Label: `architecture`
-   - Body: findings organized by check, with file:line references. Include the GitNexus execution flows or symbols that confirm or contradict each finding.
+   - Body: findings organized by check, with file:line references. Include the code graph symbols or call paths that confirm or contradict each finding.
    - If everything passes, note "Architecture is clean - no drift detected"
 
 Use `gh issue create` to create the report.

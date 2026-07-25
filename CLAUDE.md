@@ -367,46 +367,44 @@ Configured in `.claude/settings.json`. These fire during Claude Code sessions:
 - `.github/copilot/instructions.md` - GitHub Copilot custom instructions
 - Both derive from this `CLAUDE.md` as the source of truth
 
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+---
 
-This project is indexed by GitNexus as **furio-kit** (797 symbols, 932 relationships, 6 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+## Code Intelligence
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+Code-intelligence MCP servers may be connected (codebase-memory-mcp, Serena, tokensave). They are **optional** — every task must remain doable with `Read`, `Grep`, and `Glob` alone, since not every contributor has them installed. Never write a rule that blocks work when a server is absent.
 
-## Always Do
+More than one of these advertises itself as the one to reach for first. This section is the tiebreaker; it overrides those claims.
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+| Need | Use |
+|---|---|
+| "Who calls this?" / blast radius before an edit | `trace_path`, `search_graph` (codebase-memory-mcp) |
+| Project-wide structure, layer overview | `get_architecture` (codebase-memory-mcp) |
+| Precise symbol definition, references, rename | Serena's LSP symbol tools |
+| Git history, blame, churn, complexity metrics | tokensave — this is its lane, **not** code navigation |
+| Reading or editing a file you already located | `Read` / `Edit` — not a graph tool |
+| Text search where you know the string | `Grep` — not a graph tool |
 
-## Never Do
+Rules of thumb:
 
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+- **Graph tools locate; you still read the file.** A graph hit is a pointer, not a substitute for reading the code before changing it.
+- **Serena for symbol-level precision, codebase-memory for relationships.** Serena's language server knows exact definitions and references; the graph knows call chains and architectural shape. Don't run both for the same question.
+- **Don't re-index reflexively.** Check `index_status({ project: "furio-kit" })` first; re-index only when `head_sha` has drifted from `HEAD`.
+- **No mandatory pre-edit ritual.** Run impact analysis when the blast radius is genuinely unclear — editing `shared/`, `proxy.ts`, `instrumentation.ts`, or anything with many importers. A leaf component edit does not need it.
 
-## Resources
+The graph index is keyed to the project name **`furio-kit`**. Re-index with:
 
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/furio-kit/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/furio-kit/clusters` | All functional areas |
-| `gitnexus://repo/furio-kit/processes` | All execution flows |
-| `gitnexus://repo/furio-kit/process/{name}` | Step-by-step execution trace |
+```
+index_repository({ repo_path: ".", mode: "full", name: "furio-kit" })
+```
 
-## CLI
+All local index state (`.serena/`, `.tokensave/`) is gitignored and regenerable — these servers are configured per-developer, not shipped with the boilerplate.
 
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+### Licensing constraint on tooling (important)
 
-<!-- gitnexus:end -->
+furio-kit is **MIT-licensed** and exists to be cloned and deployed **commercially** by the organizations adopting it. That constrains what this file may require:
+
+- **Never make an external tool mandatory.** A `MUST` rule here is not a suggestion to an individual developer — it is a requirement imposed on every downstream adopter, and it carries that tool's license restrictions to all of them.
+- **Check the license before integrating any code-intelligence tool.** Source-available and noncommercial licenses (PolyForm Noncommercial, BUSL, SSPL, CC BY-NC) are incompatible with a mandatory role in this repository, regardless of technical merit.
+- Optional, individually installed developer tooling that is not distributed with the boilerplate does not create this problem. Keep it that way.
+
+> **Precedent:** a GitNexus integration was removed on 2026-07-25. It was licensed PolyForm Noncommercial 1.0.0, yet this file carried `MUST` rules requiring it before every symbol edit and commit — which would have placed every commercial adopter following those instructions in violation of its license. No technical fix addressed this; only removing the mandate did. See `docs/wiki/10-gitnexus.md`.

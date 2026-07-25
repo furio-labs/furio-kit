@@ -286,7 +286,7 @@
     <li><a href="#observability">Observability</a></li>
     <li><a href="#ci">CI Pipeline</a></li>
     <li class="section-header">Knowledge</li>
-    <li><a href="#gitnexus">GitNexus Graph</a></li>
+    <li><a href="#gitnexus">GitNexus Graph <span style="color:var(--color-danger);font-size:.85em;">(deprecated)</span></a></li>
     <li><a href="#adrs">ADR Index</a></li>
     <li><a href="#tradeoffs">Tradeoff Summary</a></li>
   </ul>
@@ -1004,8 +1004,21 @@
 
   <!-- ── 11. GitNexus ──────────────────────────── -->
   <section id="gitnexus">
-    <h2><span class="num">11</span> GitNexus Knowledge Graph</h2>
-    <p>The codebase is indexed as a call graph by GitNexus. The graph enables impact analysis, execution flow tracing, and call-graph-aware symbol renaming.</p>
+    <h2><span class="num">11</span> GitNexus Knowledge Graph <span style="font-size:.6em;font-weight:600;color:var(--color-danger);vertical-align:middle;">DEPRECATED</span></h2>
+
+    <div class="callout warn">
+      <strong>GitNexus was removed from furio-kit on 2026-07-25 due to license incompatibility.</strong> This section is retained for historical reference; the clusters and flows below still describe the architecture accurately, but the tooling that produced them is no longer wired into this repository.
+      <p><strong>The reason was licensing.</strong> GitNexus is distributed under the <a href="https://polyformproject.org/licenses/noncommercial/1.0.0/">PolyForm Noncommercial License 1.0.0</a> (<code>gitnexus@1.6.5</code>), which permits use only for noncommercial purposes. furio-kit is <strong>MIT-licensed</strong> and exists to be cloned and deployed as a commercial enterprise frontend. The two cannot coexist.</p>
+      <ul>
+        <li><strong>The integration was mandatory, not optional.</strong> <code>CLAUDE.md</code>, <code>AGENTS.md</code>, and the Copilot instructions carried <code>MUST</code>/<code>NEVER</code> rules requiring <code>gitnexus_impact</code> before every symbol edit and <code>gitnexus_detect_changes</code> before every commit, reinforced by a <code>PreToolUse</code> hook on every write.</li>
+        <li><strong>That propagated the restriction to every adopter.</strong> An organization cloning this MIT template for commercial work and following its own prescribed workflow would have been using a noncommercial-licensed tool commercially. A permissive template must not induce its adopters into a license violation.</li>
+        <li><strong>No technical remedy applied.</strong> Refreshing the index or registering the server would not have changed the licensing position. Removal — or stripping every mandate — were the only resolutions, and the tooling was load-bearing throughout the instruction files.</li>
+      </ul>
+      <p><em>Incidentally, the integration had also fallen out of active use by then: the local index was last built at commit <code>87dafdc</code> while <code>HEAD</code> had advanced to <code>0a4b4f0</code>. That was a symptom, not the reason.</em></p>
+      <p>The capability was re-sourced, not abandoned: call-graph relationships, blast radius, and change detection now come from <strong>codebase-memory-mcp</strong> (<code>trace_path</code>, <code>search_graph</code>, <code>get_architecture</code>, <code>detect_changes</code>); symbol-precise references and renames come from <strong>Serena</strong>'s language server. Both are optional and configured per developer — no rule in this repository blocks work when they are absent. See the <em>Code Intelligence</em> section of <code>CLAUDE.md</code>.</p>
+    </div>
+
+    <p>The codebase was indexed as a call graph by GitNexus. The graph enabled impact analysis, execution flow tracing, and call-graph-aware symbol renaming.</p>
 
     <table class="data-table">
       <thead><tr><th>Cluster</th><th>Key symbols</th><th>Cohesion</th></tr></thead>
@@ -1033,7 +1046,8 @@
     </table>
 
     <div class="callout">
-      Run <code>npx gitnexus analyze</code> after significant refactors to keep the index fresh. The index is gitignored — each developer maintains their own local copy.
+      <s>Run <code>npx gitnexus analyze</code> after significant refactors to keep the index fresh. The index is gitignored — each developer maintains their own local copy.</s><br>
+      <strong>No longer applicable.</strong> To refresh the current code graph instead, run <code>index_repository({ repo_path: ".", mode: "full", name: "furio-kit" })</code> via codebase-memory-mcp. Check freshness first with <code>index_status({ project: "furio-kit" })</code> — if <code>head_sha</code> matches <code>HEAD</code>, no re-index is needed.
     </div>
   </section>
 
@@ -1140,9 +1154,9 @@
           <td>Template maintenance; rigid for unusual shapes</td>
         </tr>
         <tr>
-          <td>GitNexus code graph</td>
-          <td>Impact analysis before edits; call-graph-aware renaming; execution flow tracing</td>
-          <td>Index must be refreshed after major refactors; local-only (gitignored)</td>
+          <td>Code graph <span style="color:var(--color-danger);font-size:.85em;">(GitNexus removed 2026-07-25)</span></td>
+          <td>Impact analysis before edits; call-graph-aware renaming; execution flow tracing — now via codebase-memory-mcp and Serena</td>
+          <td>Optional, per-developer, local-only, and mandated by nothing — deliberately, since anything the instruction files require inherits its license onto every commercial adopter. GitNexus was dropped because its PolyForm Noncommercial license conflicted with this MIT template's commercial purpose; see §11</td>
         </tr>
       </tbody>
     </table>

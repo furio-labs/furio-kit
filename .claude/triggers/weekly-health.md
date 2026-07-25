@@ -9,7 +9,7 @@ You are a maintenance agent for furio-kit. Run the following checks and produce 
 
 ## Steps
 
-1. **GitNexus index check:** Run `npx gitnexus status`. If the index is more than 7 days old or reports fewer than 700 symbols, run `npx gitnexus analyze` to refresh it. Include the index age and symbol count in the report.
+1. **Code graph index check:** Run `index_status({ project: "furio-kit" })`. If `head_sha` does not match current `HEAD`, or the graph reports fewer than 700 nodes, refresh it with `index_repository({ repo_path: ".", mode: "full", name: "furio-kit" })`. Include the node/edge count in the report.
 
 2. **Dependency updates:** Run `pnpm outdated` and list packages with available updates. Group by severity (patch, minor, major).
 
@@ -26,7 +26,7 @@ You are a maintenance agent for furio-kit. Run the following checks and produce 
 6. **Report:** Create a GitHub issue with:
    - Title: `Weekly Health Report - YYYY-MM-DD`
    - Label: `maintenance`
-   - Body: findings from steps 1-5, organized by section. Include GitNexus index status.
+   - Body: findings from steps 1-5, organized by section. Include code graph index status.
    - If everything is clean, still create the issue but note "All clear - no action needed"
 
 Use `gh issue create` to create the report.

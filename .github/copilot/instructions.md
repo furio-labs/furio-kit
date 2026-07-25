@@ -32,21 +32,14 @@
 - Client-safe env vars must use `NEXT_PUBLIC_` prefix.
 - Auth tokens in HttpOnly cookies only, never localStorage.
 
+## Tooling
+
+- Code-intelligence servers (codebase-memory-mcp, Serena) are **optional**. Never assume one is available — every task must be completable with plain file reading and search.
+- Never introduce a rule making an external tool mandatory. furio-kit is MIT-licensed and deployed commercially by adopters; required tooling imposes its license on all of them. A GitNexus integration was removed on 2026-07-25 for exactly this reason (PolyForm Noncommercial license, mandated by `MUST` rules).
+
 ## Testing
 
 - Tests co-located with source: `*.test.ts` / `*.test.tsx`.
 - Use Vitest + React Testing Library.
 - Write tests before implementing new features (TDD).
 - For bug fixes, write a failing test first.
-
-## Code Intelligence (GitNexus)
-
-furio-kit is indexed by GitNexus (797 symbols, 932 relationships). Before editing any function, class, or method:
-
-1. Run `gitnexus_impact({ target: "symbolName", direction: "upstream" })` to check blast radius.
-2. Warn the user if risk is HIGH or CRITICAL before proceeding.
-3. Run `gitnexus_detect_changes()` before committing to verify only expected symbols changed.
-4. Use `gitnexus_query({ query: "concept" })` to explore unfamiliar code instead of grepping.
-5. Use `gitnexus_rename(...)` for all symbol renames — never find-and-replace.
-
-Check index freshness: `gitnexus://repo/furio-kit/context`. Re-analyze if stale: `npx gitnexus analyze`.
