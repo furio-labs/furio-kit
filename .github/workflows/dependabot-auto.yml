@@ -1,13 +1,26 @@
-name: Dependabot Auto-Merge
+name: Dependabot Triage
+
+# Flags major-version bumps for human review. It does not merge anything.
+#
+# Auto-merge was removed deliberately: GitHub's auto-merge only engages when a
+# PR has a pending requirement (a required status check or review). `main` has
+# no branch protection, so `gh pr merge --auto` had nothing to wait on and the
+# steps never succeeded. Re-adding them without branch protection would merge
+# dependency PRs before CI reports, which is worse than merging by hand.
+#
+# To restore auto-merge: protect `main`, require both CI matrix checks
+# ("Typecheck · Lint · Test · Build (Node 22)" and "(Node 24)"), enable
+# `allow_auto_merge` on the repository, then add the merge steps back.
 
 on: pull_request
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
-  auto-merge:
+  triage:
+    name: Flag major bumps for review
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -17,24 +30,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto-merge patch updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
-        run: gh pr merge "$PR_URL" --auto --squash
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Auto-merge minor updates (no breaking changes)
-        if: >-
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
-          && !contains(github.event.pull_request.body, 'BREAKING')
-          && !contains(github.event.pull_request.body, 'breaking change')
-          && !contains(github.event.pull_request.body, 'deprecated')
-        run: gh pr merge "$PR_URL" --auto --squash
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      # The `needs-review` label is also in stale.yml's `exempt-pr-labels`, so
+      # labelling here is what keeps a major bump from being auto-closed at 21
+      # days. If this step fails, major dependency PRs are silently discarded.
       - name: Label major updates for review
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         run: |
