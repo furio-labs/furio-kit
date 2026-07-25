@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.2.0...furio-kit-v0.2.1) (2026-07-25)
+
+
+### Bug Fixes
+
+* bump package versions ([09e9c5f](https://github.com/furio-labs/furio-kit/commit/09e9c5fc1166d7376bc0bafc4a25dfc60aa0dcdd))
+* remove gtnexus from stack ([4b9217e](https://github.com/furio-labs/furio-kit/commit/4b9217ee90f5b8644d4ee64257626c563ba6fb7e))
+
+
+### Documentation
+
+* document branch protection setup for adopters ([#60](https://github.com/furio-labs/furio-kit/issues/60)) ([031de0e](https://github.com/furio-labs/furio-kit/commit/031de0e881e52f307d8ed1a621b3c0042b59c712))
+
 ## [0.2.0](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.1.0...furio-kit-v0.2.0) (2026-06-24)
 
 
