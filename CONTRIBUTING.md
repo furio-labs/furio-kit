@@ -4,12 +4,18 @@
 
 furio-kit uses git worktrees so each feature branch gets its own isolated directory without switching branches.
 
+Node 24 is the recommended runtime (`.nvmrc` / `.node-version`); Node 22 is the
+supported floor and CI runs both.
+
 ```bash
 # 1. Clone the repo
 git clone git@github.com:furio-labs/furio-kit.git
 cd furio-kit
 
-# 2. Create a worktree for your branch
+# 2. Use the pinned Node version
+nvm use          # or: fnm use / asdf install
+
+# 3. Create a worktree for your branch
 git worktree add .worktrees/my-feature -b feature/my-feature
 
 # 3. Install dependencies in the worktree
@@ -216,6 +222,48 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 **Security PRs:** When Dependabot opens a PR for a security advisory, rename its title from `build(deps):` to `security:` before merging so it appears in the `🔒 Security` section.
 
 **Breaking changes:** Add `!` after the type (`feat!:`) or a `BREAKING CHANGE:` footer to trigger a major version bump.
+
+---
+
+## Repository Protection (for adopters)
+
+The workflows in `.github/workflows/` travel with a clone. **Branch protection does
+not** — it lives in GitHub repository settings, not in the repo. A fresh clone or
+fork of furio-kit starts with an unprotected default branch, so CI, CodeQL, and the
+audit workflow all run but none of them can block a merge.
+
+If you deploy this boilerplate, configure protection on your default branch. What
+`furio-labs/furio-kit` uses, as a starting point:
+
+| Rule | Value |
+|---|---|
+| Require a pull request | on |
+| Required approvals | `1` for teams; `0` for a solo maintainer (see below) |
+| Require status checks | `Typecheck · Lint · Test · Build (Node 22)` and `(Node 24)` |
+| Require code scanning | CodeQL — errors / high-or-higher |
+| Require signed commits | on |
+| Require linear history | on |
+| Allowed merge method | squash only |
+
+Applied via the CLI:
+
+```bash
+gh api -X POST repos/OWNER/REPO/rulesets --input ruleset.json
+```
+
+Three things that are easy to get wrong:
+
+- **Required check names are literal strings.** They must match the `name:` your CI
+  job renders, matrix values included. Renaming a job or changing the matrix without
+  updating the ruleset blocks every PR on a check that will never report, with no
+  error explaining why.
+- **A solo maintainer cannot approve their own PR.** With required approvals set to
+  `1` and one collaborator, every PR you author needs an admin bypass — which trains
+  you to bypass reflexively, so a bypass that *should* have given you pause doesn't.
+  Set approvals to `0` and let CI, code scanning, and signing be the real gates.
+- **`strict_required_status_checks_policy`** forces every PR to be rebased onto the
+  latest default branch before merging. With several Dependabot PRs open that becomes
+  a rebase treadmill; leave it off unless you need the stronger guarantee.
 
 ---
 
