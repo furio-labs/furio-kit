@@ -388,14 +388,32 @@ Rules of thumb:
 
 - **Graph tools locate; you still read the file.** A graph hit is a pointer, not a substitute for reading the code before changing it.
 - **Serena for symbol-level precision, codebase-memory for relationships.** Serena's language server knows exact definitions and references; the graph knows call chains and architectural shape. Don't run both for the same question.
-- **Don't re-index reflexively.** Check `index_status({ project: "furio-kit" })` first; re-index only when `head_sha` has drifted from `HEAD`.
+- **Don't re-index reflexively.** Check `index_status` first; re-index only when `head_sha` has drifted from `HEAD`.
 - **No mandatory pre-edit ritual.** Run impact analysis when the blast radius is genuinely unclear — editing `shared/`, `proxy.ts`, `instrumentation.ts`, or anything with many importers. A leaf component edit does not need it.
 
-The graph index is keyed to the project name **`furio-kit`**. Re-index with:
+Every codebase-memory *query* tool takes a required `project` argument —
+`search_graph`, `trace_path`, `get_code_snippet`, `get_architecture`, `query_graph`,
+`search_code`, `index_status`, `detect_changes`. The two entry points, `list_projects`
+and `index_repository`, do not.
+
+Qualified names are prefixed with that key, and it is derived from your checkout's
+**absolute path**, not the directory name — run `list_projects` to read it. On a clone
+at `~/src/furio-kit` it looks like `Users-you-src-furio-kit`.
+
+Re-index with:
 
 ```
-index_repository({ repo_path: ".", mode: "full", name: "furio-kit" })
+index_repository({ repo_path: ".", mode: "full" })
 ```
+
+**Do not pass `name:`.** It overrides the derived name and registers a *second*
+index of the same repo. Both stay current, so the damage is not staleness — it is
+that qualified names are project-scoped. A QN taken from one key returns
+`symbol not found` against the other, and the PreToolUse search augmenter emits
+QNs under the derived key, so a named index silently breaks the identifiers it
+hands you. If `list_projects` shows two entries sharing a `canonical_root`,
+`delete_project` the named one — it can answer `{"status":"not_found"}` even when the
+removal succeeded, so confirm the outcome with `list_projects` rather than the response.
 
 All local index state (`.serena/`, `.tokensave/`) is gitignored and regenerable — these servers are configured per-developer, not shipped with the boilerplate.
 
