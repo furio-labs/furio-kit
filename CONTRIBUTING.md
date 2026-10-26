@@ -5,7 +5,7 @@
 furio-kit uses git worktrees so each feature branch gets its own isolated directory without switching branches.
 
 Node 24 is the recommended runtime (`.nvmrc` / `.node-version`); Node 22 is the
-supported floor and CI runs both.
+supported floor. CI runs 22, 24, and 26.
 
 ```bash
 # 1. Clone the repo

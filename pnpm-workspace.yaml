@@ -1,17 +1,21 @@
 packages:
   - .
 
-ignoredBuiltDependencies:
-  - esbuild
-  - sharp
+allowBuilds:
+  esbuild: false
+  sharp: false
 
 overrides:
-  esbuild@<=0.24.2: '>=0.25.0'
-  esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
-  handlebars@>=4.0.0 <4.7.9: '>=4.7.9'
-  picomatch@<2.3.2: '>=2.3.2'
-  picomatch@>=4.0.0 <4.0.4: '>=4.0.4'
+  esbuild@<0.28.1: '^0.28.1'
+  handlebars@<4.7.10: '^4.7.10'
+  picomatch@<2.3.2: '^2.3.2'
+  picomatch@>=4.0.0 <4.0.4: '^4.0.4'
   postcss: '^8.5.18'
-  sharp@<0.35.0: '>=0.35.0'
-  undici@>=7.0.0 <7.24.0: '>=7.24.0'
-  undici@>=7.17.0 <7.24.0: '>=7.24.0'
+  sharp@<0.35.5: '^0.35.5'
+
+# Keeps pnpm-lock.yaml a single YAML document. Without it, pnpm 12 prepends an
+# env document (packageManagerDependencies) that GitHub's dependency graph reads
+# as the whole lockfile, reporting 0 dependencies and silencing Dependabot alerts
+# (pnpm/pnpm#13805, dependabot/dependabot-core#15904). engines.pnpm in
+# package.json still rejects an older pnpm. Remove once GitHub parses both docs.
+pmOnFail: ignore

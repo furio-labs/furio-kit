@@ -9,13 +9,13 @@ Get a new app running from furio-kit in under five minutes: clone or degit the t
 | Requirement | Minimum version | Install |
 |---|---|---|
 | Node.js | 22 | [nodejs.org](https://nodejs.org) |
-| pnpm | 10 | `npm install -g pnpm` |
+| pnpm | 12 | `npm install -g pnpm` |
 
 Verify before proceeding:
 
 ```bash
 node --version   # v22.x.x or higher
-pnpm --version   # 10.x.x or higher
+pnpm --version   # 12.x.x or higher
 ```
 
 ---
