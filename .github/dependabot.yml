@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # Match pnpm's default minimumReleaseAge (1 day). Dependabot bypasses that
+    # policy when it writes the lockfile, and CI's frozen install then rejects
+    # any entry younger than a day. Cooldown does not delay security updates.
+    cooldown:
+      default-days: 1
 
   # Keeps GitHub Actions current so action runtimes (e.g. node20 -> node24)
   # don't silently drift into deprecation. One isolated PR per action.

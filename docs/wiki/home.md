@@ -8,8 +8,8 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 |---|---|---|
 | Next.js | 16+ | App Router, Turbopack dev server, Server Actions |
 | React | 19+ | React Compiler, Server Components by default |
-| TypeScript | 5+ | Strict mode |
-| pnpm | 10+ | Package manager |
+| TypeScript | 7+ | Strict mode |
+| pnpm | 12+ | Package manager |
 | Biome | 2+ | Lint + format (replaces ESLint + Prettier) |
 | Tailwind CSS | v4 | Utility-first styling, no config file |
 | `@tailwindcss/postcss` | v4 | Required PostCSS plugin for Tailwind v4 |

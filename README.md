@@ -19,7 +19,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Requirements
 
 - Node.js 22+ (24 LTS recommended — see `.nvmrc`)
-- pnpm 10+
+- pnpm 12+
 
 ## Starter content (delete when you begin)
 
