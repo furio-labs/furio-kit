@@ -217,6 +217,8 @@ The strategic argument above stands. The specific tool that implemented it — G
 
 **What was retained.** The capability was not abandoned, only re-sourced. Call-graph relationships, blast radius, and change detection moved to codebase-memory-mcp; symbol-precise references and renames moved to a language server. Critically, the *structure* of the integration changed as well: the replacements are optional, individually installed, not distributed with the boilerplate, and mandated by nothing. The instruction files now state that every task must remain completable without them.
 
+**Later cleanup (2026-10-26).** The routing guidance for those replacement tools was itself removed from the instruction files: no contributor had them configured, so the guidance described tooling nobody ran. The repository now ships no code-intelligence guidance at all; any such server is a purely personal choice, and only the licensing rule remains.
+
 The revised principle: *instrumentation must remain optional, and anything an instruction file makes mandatory must be license-compatible with the project's own distribution terms.* A tool that a repository requires is not a private choice by an individual developer — it is a term the repository imposes on everyone downstream, and it must be licensed accordingly.
 
 ---

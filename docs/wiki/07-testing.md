@@ -355,4 +355,4 @@ This single import extends Vitest's `expect` with the `@testing-library/jest-dom
 
 ---
 
-**Next:** [08-ci-automation.md](./08-ci-automation.md) — GitHub Actions workflows, the architecture guard, Dependabot, and Claude Code triggers.
+**Next:** [08-ci-automation.md](./08-ci-automation.md) — GitHub Actions workflows, the architecture guard, Dependabot, and Claude Code hooks.

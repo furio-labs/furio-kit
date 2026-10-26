@@ -300,21 +300,7 @@ After changing `biome.json`, run `pnpm lint` to verify no existing code is newly
 
 ## 5. Upgrading Major Dependencies
 
-### Using the dep-review trigger
-
-The project includes a Claude Code trigger at `.claude/triggers/dep-review.md`. It runs an on-demand dependency migration impact analysis: it searches the changelog for breaking changes, scans the codebase for affected APIs, and produces a report under `docs/dep-reviews/`.
-
-To use it, open Claude Code and describe what you want to upgrade:
-
-```
-I want to upgrade TanStack Query from v5 to v6. Run the dep-review analysis.
-```
-
-Claude Code will follow the trigger's steps and save the report before you touch `package.json`.
-
-### Manual upgrade process
-
-If you prefer a manual approach:
+### Upgrade process
 
 1. Read the package's changelog or GitHub releases for all versions between your current and target version. Focus on "Breaking changes" sections.
 2. Search the codebase for the package's imports: `grep -r "from 'package-name'" src/`

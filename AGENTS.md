@@ -52,15 +52,11 @@ The following checks run automatically in CI. Do not bypass or disable them. If 
 | Dependabot | `dependabot.yml` | Weekly dependency updates |
 | Stale | `stale.yml` | Auto-close inactive PRs/issues |
 
-## Code Intelligence
+## Tooling
 
-Code-graph and symbol-index MCP servers (codebase-memory-mcp, Serena) may be connected, and more than one may claim to be the tool to reach for first. See the **Code Intelligence** section of `CLAUDE.md` for the precedence rules.
+**Never add a rule that makes any external tool mandatory.** furio-kit is MIT-licensed and deployed commercially by the organizations that adopt it. Tooling the instruction files require becomes an obligation for every one of them, and inherits that tool's license restrictions along with it. Every task here must remain doable with plain file reading and search.
 
-They are **optional**. Every task here must remain doable with plain file reading and search — never assume an index server is present.
-
-**Never add a rule that makes any external tool mandatory.** furio-kit is MIT-licensed and deployed commercially by the organizations that adopt it. Tooling the instruction files require becomes an obligation for every one of them, and inherits that tool's license restrictions along with it.
-
-> A previous GitNexus integration was removed on 2026-07-25: it was distributed under the PolyForm Noncommercial license, yet `MUST` rules here required it before every edit and commit — which would have put every commercial adopter in violation. Do not reintroduce `gitnexus_*` tool calls. See `docs/wiki/10-gitnexus.md`.
+> A previous GitNexus integration was removed on 2026-07-25: it was distributed under the PolyForm Noncommercial license, yet `MUST` rules here required it before every edit and commit — which would have put every commercial adopter in violation. Do not reintroduce `gitnexus_*` tool calls. See the §8 postscript in `docs/whitepaper-architecture-strategy.md`.
 
 ## Code Style
 

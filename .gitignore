@@ -35,7 +35,5 @@ coverage/
 # Git worktrees
 .worktrees/
 
-# Local code-intelligence indexes (regenerable)
-.tokensave/
-.serena/
+# Local Claude Code state
 .claude/.headroom_wrap_marker.json

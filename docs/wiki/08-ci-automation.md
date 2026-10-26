@@ -1,6 +1,6 @@
 # CI and Automation
 
-This page documents every automated check, hook, and scheduled agent in furio-kit. Come here when a workflow fails or you need to understand what runs and why.
+This page documents every automated check and hook in furio-kit. Come here when a workflow fails or you need to understand what runs and why.
 
 ---
 
@@ -217,47 +217,7 @@ To add a hook: add an entry to the appropriate `hooks` array. To disable a hook 
 
 ---
 
-## 6. Claude Code triggers
-
-Triggers are scheduled or on-demand agents defined as markdown files in `.claude/triggers/`. They require a Claude Max subscription. Each file has a YAML front matter block with a `schedule` (cron expression or `null`) and a `description`, followed by a prompt that Claude executes as an autonomous agent.
-
-### The three triggers
-
-**`weekly-health.md`** — Monday 09:00
-
-Runs `pnpm outdated`, lists open Dependabot PRs that were not auto-merged, runs `pnpm audit`, and checks that `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, and `package.json` version ranges are consistent with installed packages. Also verifies the code graph index is current (`index_status`), refreshing it if `head_sha` has drifted from `HEAD`. Creates a GitHub issue titled `Weekly Health Report - YYYY-MM-DD` with label `maintenance`.
-
-**`dep-review.md`** — on-demand (`schedule: null`)
-
-Given a package name and target version, searches the web for the changelog, scans the codebase for all usages of the package, maps each breaking change to the files affected, and produces a migration report saved to `docs/dep-reviews/YYYY-MM-DD-<package-name>.md`. Use this before upgrading a major dependency.
-
-**`arch-review.md`** — 1st and 15th of the month at 09:00
-
-Performs semantic architecture checks that regex-based CI cannot catch:
-
-- Zustand stores containing server-fetched data (should be UI state only)
-- `entities/*/api/` functions that return data without a Zod `.parse()` or `.safeParse()` call
-- `"use client"` directives in `widgets/` or `views/` files (boundary should be pushed down)
-- Server Components using hooks, event handlers, or browser APIs
-- Server Actions not following the `camelCaseAction` naming convention
-
-Where a code graph index is available, it cross-references these regex findings against call-graph evidence (`search_graph`, `get_architecture`, `trace_path`, `detect_changes`). These steps are advisory — the trigger still completes its checks if no index server is configured.
-
-Creates a GitHub issue titled `Architecture Review - YYYY-MM-DD` with label `architecture`.
-
-### Running a trigger on-demand
-
-To invoke `dep-review.md` manually, use the Claude Code CLI from the project root:
-
-```bash
-claude run .claude/triggers/dep-review.md
-```
-
-Pass context in the prompt or as arguments as needed. The agent will follow the steps in the trigger file and write its output to the specified location.
-
----
-
-## 7. Release Please
+## 6. Release Please
 
 `release-please.yml` runs on every push to `main`. It reads Conventional Commits since the last release and opens (or updates) a single "Release PR" titled `chore(main): release X.Y.Z`. The PR contains:
 
@@ -297,7 +257,7 @@ When Dependabot opens a PR that is security-driven (an advisory, not a routine v
 
 ---
 
-## 8. Copilot instructions
+## 7. Copilot instructions
 
 `.github/copilot/instructions.md` provides project-specific context that GitHub Copilot uses when generating suggestions in this repository. It covers:
 
