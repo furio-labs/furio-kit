@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.2.1...furio-kit-v0.2.2) (2026-10-26)
+
+
+### 🔒 Security
+
+* **deps:** clear all 40 audit advisories with in-range bumps ([1522985](https://github.com/furio-labs/furio-kit/commit/1522985f893159a2f751a2ad1e5ff6ae3347fb0e))
+
+
+### Build System
+
+* **deps:** upgrade TypeScript 7, vitest 5, jsdom 30, `@types/node` 26 ([23b5aac](https://github.com/furio-labs/furio-kit/commit/23b5aac278dd77bc7c31af961b4b11417f478ad0))
+* migrate to pnpm 12 ([a165528](https://github.com/furio-labs/furio-kit/commit/a16552863a178f3854ff1c2e4369d0cd8db468db))
+
 ## [0.2.1](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.2.0...furio-kit-v0.2.1) (2026-07-25)
 
 
