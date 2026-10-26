@@ -353,14 +353,6 @@ Configured in `.claude/settings.json`. These fire during Claude Code sessions:
 | `check-architecture.sh` | Pre-push (`git push`) | Local FSD + adapter checks before CI |
 | `security-reminder.sh` | File edit (`Edit`/`Write`) | Context-aware reminders for proxy.ts, API files, .env |
 
-### Claude Code Triggers (optional - requires Claude Max)
-
-| Trigger | Schedule | Purpose |
-|---|---|---|
-| `weekly-health.md` | Every Monday 9:00 AM | Dep updates, audit diff, doc sync check |
-| `dep-review.md` | On-demand | Migration impact analysis for major version bumps |
-| `arch-review.md` | 1st and 15th monthly | Semantic architecture drift detection |
-
 ### Multi-AI Coordination
 
 - `AGENTS.md` - instructions for all AI coding assistants
@@ -369,42 +361,12 @@ Configured in `.claude/settings.json`. These fire during Claude Code sessions:
 
 ---
 
-## Code Intelligence
-
-Code-intelligence MCP servers may be connected (codebase-memory-mcp, Serena, tokensave). They are **optional** — every task must remain doable with `Read`, `Grep`, and `Glob` alone, since not every contributor has them installed. Never write a rule that blocks work when a server is absent.
-
-More than one of these advertises itself as the one to reach for first. This section is the tiebreaker; it overrides those claims.
-
-| Need | Use |
-|---|---|
-| "Who calls this?" / blast radius before an edit | `trace_path`, `search_graph` (codebase-memory-mcp) |
-| Project-wide structure, layer overview | `get_architecture` (codebase-memory-mcp) |
-| Precise symbol definition, references, rename | Serena's LSP symbol tools |
-| Git history, blame, churn, complexity metrics | tokensave — this is its lane, **not** code navigation |
-| Reading or editing a file you already located | `Read` / `Edit` — not a graph tool |
-| Text search where you know the string | `Grep` — not a graph tool |
-
-Rules of thumb:
-
-- **Graph tools locate; you still read the file.** A graph hit is a pointer, not a substitute for reading the code before changing it.
-- **Serena for symbol-level precision, codebase-memory for relationships.** Serena's language server knows exact definitions and references; the graph knows call chains and architectural shape. Don't run both for the same question.
-- **Don't re-index reflexively.** Check `index_status({ project: "furio-kit" })` first; re-index only when `head_sha` has drifted from `HEAD`.
-- **No mandatory pre-edit ritual.** Run impact analysis when the blast radius is genuinely unclear — editing `shared/`, `proxy.ts`, `instrumentation.ts`, or anything with many importers. A leaf component edit does not need it.
-
-The graph index is keyed to the project name **`furio-kit`**. Re-index with:
-
-```
-index_repository({ repo_path: ".", mode: "full", name: "furio-kit" })
-```
-
-All local index state (`.serena/`, `.tokensave/`) is gitignored and regenerable — these servers are configured per-developer, not shipped with the boilerplate.
-
-### Licensing constraint on tooling (important)
+## Licensing constraint on tooling (important)
 
 furio-kit is **MIT-licensed** and exists to be cloned and deployed **commercially** by the organizations adopting it. That constrains what this file may require:
 
 - **Never make an external tool mandatory.** A `MUST` rule here is not a suggestion to an individual developer — it is a requirement imposed on every downstream adopter, and it carries that tool's license restrictions to all of them.
-- **Check the license before integrating any code-intelligence tool.** Source-available and noncommercial licenses (PolyForm Noncommercial, BUSL, SSPL, CC BY-NC) are incompatible with a mandatory role in this repository, regardless of technical merit.
+- **Check the license before integrating any developer tool.** Source-available and noncommercial licenses (PolyForm Noncommercial, BUSL, SSPL, CC BY-NC) are incompatible with a mandatory role in this repository, regardless of technical merit.
 - Optional, individually installed developer tooling that is not distributed with the boilerplate does not create this problem. Keep it that way.
 
-> **Precedent:** a GitNexus integration was removed on 2026-07-25. It was licensed PolyForm Noncommercial 1.0.0, yet this file carried `MUST` rules requiring it before every symbol edit and commit — which would have placed every commercial adopter following those instructions in violation of its license. No technical fix addressed this; only removing the mandate did. See `docs/wiki/10-gitnexus.md`.
+> **Precedent:** a GitNexus integration was removed on 2026-07-25. It was licensed PolyForm Noncommercial 1.0.0, yet this file carried `MUST` rules requiring it before every symbol edit and commit — which would have placed every commercial adopter following those instructions in violation of its license. No technical fix addressed this; only removing the mandate did. See the postscript in `docs/whitepaper-architecture-strategy.md` §8.

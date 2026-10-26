@@ -34,7 +34,7 @@
 
 ## Tooling
 
-- Code-intelligence servers (codebase-memory-mcp, Serena) are **optional**. Never assume one is available — every task must be completable with plain file reading and search.
+- Every task must be completable with plain file reading and search; never assume an MCP or index server is available.
 - Never introduce a rule making an external tool mandatory. furio-kit is MIT-licensed and deployed commercially by adopters; required tooling imposes its license on all of them. A GitNexus integration was removed on 2026-07-25 for exactly this reason (PolyForm Noncommercial license, mandated by `MUST` rules).
 
 ## Testing

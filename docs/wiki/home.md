@@ -30,9 +30,8 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 | 5 | [Auth](./05-auth.md) | Auth adapter architecture, switching providers, route protection, testing locally |
 | 6 | [State Management](./06-state-management.md) | Decision matrix, Server Actions, TanStack Query, Zustand, anti-patterns |
 | 7 | [Testing](./07-testing.md) | What to test per layer, co-location, RTL patterns, Vitest config |
-| 8 | [CI & Automation](./08-ci-automation.md) | GitHub Actions workflows, architecture guard, Dependabot, Claude Code triggers |
+| 8 | [CI & Automation](./08-ci-automation.md) | GitHub Actions workflows, architecture guard, Dependabot, Claude Code hooks |
 | 9 | [Extending the Template](./09-extending.md) | Adding generators, workflows, hooks, upgrading majors, upstream sync |
-| 10 | [GitNexus](./10-gitnexus.md) | ⚠️ **Deprecated** — removed 2026-07-25. Retained for historical reference; see [Code Intelligence](#code-intelligence) below |
 
 ## Where to Find What
 
@@ -51,23 +50,11 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 | How do all AI assistants behave in this repo? | [`AGENTS.md`](../../AGENTS.md) |
 | How do I contribute a PR, use worktrees, or run the generators? | [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |
 | Where do I start as a first-time visitor? | [`README.md`](../../README.md) |
-| How do I understand code, trace bugs, or assess impact? | [Code Intelligence](#code-intelligence) below |
 
-## Code Intelligence
+## Developer Tooling and Licensing
 
-**GitNexus was removed from furio-kit on 2026-07-25.** The [GitNexus page](./10-gitnexus.md) remains only as historical reference.
+furio-kit is MIT-licensed and exists to be cloned and deployed as a commercial enterprise frontend, so its instruction files (`CLAUDE.md`, `AGENTS.md`, the Copilot instructions) never make an external tool mandatory. Anything they require becomes an obligation for every organization deploying furio-kit, carrying that tool's license with it.
 
-**It was dropped for licensing reasons.** GitNexus is distributed under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/), which permits use only for noncommercial purposes. furio-kit is MIT-licensed and exists to be cloned and deployed as a commercial enterprise frontend.
+**Precedent:** a GitNexus code-graph integration was removed on 2026-07-25. It was distributed under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/), yet the instruction files mandated it with `MUST` rules before every edit and commit, which would have put commercial adopters in violation. See the §8 postscript in [the architecture whitepaper](../whitepaper-architecture-strategy.md).
 
-That alone would be a conflict, but the integration made it worse: `CLAUDE.md`, `AGENTS.md`, and the Copilot instructions **mandated** GitNexus tools with `MUST`/`NEVER` rules before every edit and commit. Any organization using this boilerplate commercially and following its own required workflow would have been using a noncommercial-licensed tool commercially. A permissively licensed template must not induce its adopters into a license violation. No technical fix addressed this — only removal did.
-
-Code intelligence is now provided by two **optional**, per-developer MCP servers:
-
-| Server | Lane |
-|---|---|
-| codebase-memory-mcp | Call graph and relationships — `trace_path`, `search_graph`, `get_architecture`, `detect_changes` |
-| Serena | LSP symbol precision — exact definitions, references, safe renames |
-
-Neither is required, neither is mandated by any rule, and neither ships with the boilerplate — each developer installs them individually if they want them. Every task in this repo must remain doable with plain file reading and search. That is deliberate: it is what keeps a developer-tooling choice from becoming a licensing obligation for everyone downstream. See the **Code Intelligence** section of [`CLAUDE.md`](../../CLAUDE.md) for the precedence rules that decide which to reach for.
-
-> **When adding any code-intelligence tool to this project, check its license first.** Anything mandated by the instruction files effectively becomes a requirement for every organization deploying furio-kit commercially.
+> **Before adding any developer tool to this project, check its license.** Optional, individually installed tooling is fine; mandating it is not.
