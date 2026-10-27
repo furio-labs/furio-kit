@@ -1,20 +1,14 @@
 /**
- * Active auth adapter.
+ * Shared auth surface: types and pure helpers, safe to import from both
+ * Server and Client Components.
  *
- * Swap the import below to switch identity providers — one line change.
- *
- * Available adapters:
- *   - ./adapters/mock    — dev-only; returns null unless MOCK_AUTH_USER is set
- *   - ./adapters/auth0   — Auth0 OIDC (requires @auth0/nextjs-auth0)
- *   - ./adapters/ping    — PingFederate / PingOne OIDC (requires jose)
+ * Runtime-specific code lives behind dedicated entry points:
+ *   - `@/shared/auth/server` — adapter selection (AUTH_PROVIDER), getServerSession,
+ *                              requirePermission. Guarded by `server-only`.
+ *   - `@/shared/auth/client` — usePermission hook. Guarded by `client-only`.
  */
-import { mockAdapter } from './adapters/mock'
-
-export const authAdapter = mockAdapter
-
-// Re-export types so callers only need one import path
 export type { AuthAdapter } from './auth-adapter'
-export type { AuthUser, Session } from './types'
-export { hasPermission } from './permissions'
 export type { Permission } from './permissions'
-export { usePermission } from './use-permission'
+export { hasPermission } from './permissions'
+export type { AuthUser, Session } from './types'
+export { AuthUserSchema, SessionSchema } from './types'
