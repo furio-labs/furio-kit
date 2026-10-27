@@ -1,13 +1,12 @@
 {
   "$comment": "First-load JS budgets in gzip KB (1024 bytes), enforced by scripts/check-bundle-budget.mjs after `pnpm build`. Groups: `interactive` = routes under an (interactive) route group; `read` = every other route, including (auth) and top-level pages. Per-route overrides go in `routes`, keyed by URL path: { \"/reports\": { \"gzipKb\": 160, \"reason\": \"...\" } }.",
   "groups": {
-    "read": { "gzipKb": 140 },
-    "interactive": { "gzipKb": 200 }
-  },
-  "routes": {
-    "/": {
-      "gzipKb": 150,
-      "reason": "Temporary: the (app) layout still mounts QueryProvider + StoreProvider on read routes (~144 KB). Remove once providers move to the (interactive) layout."
+    "read": {
+      "gzipKb": 140
+    },
+    "interactive": {
+      "gzipKb": 180
     }
-  }
+  },
+  "routes": {}
 }

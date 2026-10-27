@@ -10,6 +10,13 @@ set -uo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}" || exit 0
 
+# Don't rely on the settings.json `if` filter alone: only gate actual pushes
+# (including rtk-prefixed ones), and let every other Bash command through.
+INPUT=$(cat 2>/dev/null || true)
+if ! printf '%s' "$INPUT" | grep -qE '"command"[^}]*\bgit push\b'; then
+  exit 0
+fi
+
 ERRORS=""
 
 if ! OUTPUT=$(pnpm --silent check:arch --output-type err 2>&1); then

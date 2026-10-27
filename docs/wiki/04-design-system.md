@@ -99,8 +99,6 @@ When the package's props differ more than a rename can fix (say it takes `intent
 
 ```tsx
 // src/shared/ui/Button/Button.tsx
-'use client'
-
 import { Button as KitButton } from '#ui-kit'
 
 export function Button({ variant = 'primary', ...rest }: ButtonProps) {
@@ -154,7 +152,9 @@ App code outside the kit should also use semantic classes, so a re-brand reaches
 
 ## Link: data-saving prefetch
 
-`Link` from `@/shared/ui` wraps `next/link`. By default `next/link` prefetches every link that scrolls into view, which spends data the user didn't ask for on slow or metered connections. The adapter turns prefetch off when the browser reports Save-Data (`navigator.connection.saveData`) or a `slow-2g`/`2g` connection. Otherwise it passes your `prefetch` prop through unchanged.
+`Link` from `@/shared/ui` wraps `next/link`. By default `next/link` prefetches every link that scrolls into view, which spends data the user didn't ask for on slow or metered connections. The adapter turns prefetch off unless you pass `prefetch` (`true` or `'auto'`); opt in on the few links users almost always follow, such as primary navigation.
+
+It is a Server Component on purpose. A `'use client'` version that switched prefetch off only on Save-Data or 2G connections measured about 9 KB gzip extra on every page that rendered it, more than the prefetching it avoided.
 
 ```tsx
 import { Link } from '@/shared/ui'
@@ -201,7 +201,9 @@ Use it instead of importing `next/link` directly.
 4. Re-export it from `src/shared/ui/index.ts`.
 5. Add `Badge.test.tsx` next to it to test the prop mapping.
 
-Mark the adapter `'use client'` when it takes event handlers or the kit component uses hooks (`Button`, `Input`, `Modal`). Leave it a Server Component when it only renders data (`Card`, `Badge`). If you're unsure whether a package component is client-only, use `'use client'`.
+Mark an adapter `'use client'` only when the adapter itself uses hooks, refs or browser APIs. Taking an `onClick` prop does not need it. An adapter without the directive renders on the server, with no JavaScript, when a Server Component uses it, and is bundled into the client chunk when a Client Component renders it. A package component that needs the client already carries its own `'use client'`.
+
+This matters because Next ships every `'use client'` module a page imports, even through the `@/shared/ui` barrel and even if the page never renders it. One client adapter in the barrel is paid for by every page that imports the barrel. Measured in this repo: a `'use client'` `Button` whose kit uses `cn()` added about 9 KB gzip (mostly `tailwind-merge`) to `/login` and `/403`. For package mode, also add your package to `experimental.optimizePackageImports` in `next.config.ts` so only the components you use are bundled.
 
 Every kit you add later must export the new name too. The build fails if one doesn't.
 

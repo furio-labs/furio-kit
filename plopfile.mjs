@@ -178,7 +178,7 @@ export default function (plop) {
       {
         type: 'confirm',
         name: 'interactive',
-        message: 'Interactive (needs hooks/event handlers → adds "use client")?',
+        message: 'Does the adapter itself use hooks, refs or browser APIs (adds "use client")?',
         default: false,
       },
     ],
