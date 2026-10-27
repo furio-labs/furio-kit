@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.3.0...furio-kit-v0.3.1) (2026-10-27)
+
+
+* release 0.3.1 ([18f7f06](https://github.com/furio-labs/furio-kit/commit/18f7f06c054657eac5f75feb3af9eb0f74a98b32))
+
+
+### Documentation
+
+* bring docs and wiki up to date with v0.3.0 ([f1a5356](https://github.com/furio-labs/furio-kit/commit/f1a53562849ee151a4bec470239693b19aa645c1))
+* bring docs and wiki up to date with v0.3.0 ([4997dd9](https://github.com/furio-labs/furio-kit/commit/4997dd9ec817979e8596590c14e5eb840b679a61))
+
 ## [0.3.0](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.2.2...furio-kit-v0.3.0) (2026-10-27)
 
 
