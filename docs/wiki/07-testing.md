@@ -353,6 +353,10 @@ import '@testing-library/jest-dom'
 
 This single import extends Vitest's `expect` with the `@testing-library/jest-dom` matchers: `toBeInTheDocument()`, `toBeDisabled()`, `toHaveClass()`, `toHaveTextContent()`, and the rest. These matchers are available in every test file without any further setup.
 
+### `vitest-matchers.d.ts`
+
+`@testing-library/jest-dom` 7 adds its matcher types to Vitest's `Assertion<T>` interface, but Vitest 5 changed that interface to `Assertion<R, T>`. Without a fix, the matchers still work at runtime but TypeScript reports them as unknown. The root `vitest-matchers.d.ts` adds the jest-dom matchers to Vitest 5's `Matchers<R, T>` interface instead. Delete the file once jest-dom ships types for Vitest 5.
+
 ---
 
 **Next:** [08-ci-automation.md](./08-ci-automation.md) — GitHub Actions workflows, the architecture guard, Dependabot, and Claude Code hooks.

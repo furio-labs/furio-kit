@@ -92,20 +92,20 @@ Create a YAML file in `.github/workflows/`. The three existing workflows (`ci.ym
 ### Standard setup block
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
 
-- uses: pnpm/action-setup@v4
+- uses: pnpm/action-setup@v6
 
-- uses: actions/setup-node@v4
+- uses: actions/setup-node@v6
   with:
-    node-version: 22
+    node-version: 24
     cache: pnpm
 
 - name: Install dependencies
   run: pnpm install --frozen-lockfile
 ```
 
-Always pin actions to `@v4`. Do not use `@latest` — it makes builds non-deterministic.
+Pin each action to the same major version tag the existing workflows use. Do not use `@latest` — it makes builds non-deterministic. `pnpm/action-setup` reads the pnpm version from `packageManager` in `package.json`, so do not pass a `version:` input.
 
 ### Env vars in run blocks
 
@@ -139,13 +139,13 @@ jobs:
     name: Bundle size check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
@@ -312,8 +312,8 @@ After changing `biome.json`, run `pnpm lint` to verify no existing code is newly
 
 Not every major version is worth chasing immediately. Examples of when to hold:
 
-- **TypeScript 6.0** — stricter type inference can require widespread changes across `entities/*/api/` Zod schemas and Server Action return types. Wait for ecosystem tooling (Biome, Next.js type definitions) to catch up before upgrading.
-- **@vitejs/plugin-react 6.0** — if it requires a Vite major bump, check that Vitest's peer dependency range includes the new version before upgrading either.
+- **TypeScript 7.0** — the native compiler ships no JavaScript compiler API or `tsserver.js`, so any tool that loads them breaks. furio-kit held at 6.x until Next.js 16.4.3 could build with TypeScript 7 without an experimental flag. Check that Next.js and your editor tooling support the new major before upgrading.
+- **Vitest 5.0** — it changed `Assertion<T>` to `Assertion<R, T>`, so `@testing-library/jest-dom` 7 matchers silently dropped out of the types. furio-kit bridges the gap with `vitest-matchers.d.ts` (see [07-testing.md](./07-testing.md)). Check that libraries augmenting a test runner's types support the new major before upgrading it.
 
 A dependency is a candidate to hold when: it requires changes to more than a handful of files, its ecosystem peers haven't released compatible versions yet, or it changes behavior in security-sensitive areas (auth libraries, HTTP clients, cookie handling).
 
