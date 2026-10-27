@@ -1,0 +1,18 @@
+{{#if interactive}}
+'use client'
+
+{{/if}}
+import type { ReactNode } from 'react'
+import { {{name}} as Kit{{name}} } from '#ui-kit'
+
+// Adapter — the app-owned contract for {{name}}. Features, entities and widgets import
+// this from '@/shared/ui'; only this file knows about the kit component.
+// Declare the props the app needs here and map them onto Kit{{name}} below.
+export interface {{name}}Props {
+  children?: ReactNode
+  className?: string
+}
+
+export function {{name}}({ children, className }: {{name}}Props) {
+  return <Kit{{name}} className={className}>{children}</Kit{{name}}>
+}

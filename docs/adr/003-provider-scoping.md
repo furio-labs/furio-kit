@@ -4,6 +4,7 @@
 **Status:** Proposed
 **Priority:** High
 **Deciders:** FurioLabs engineering team
+**Refined by:** [ADR-009](009-framework-and-js-floor.md) — providers now mount in `app/(app)/(interactive)/layout.tsx`; `app/(app)/layout.tsx` is provider-free.
 
 ---
 

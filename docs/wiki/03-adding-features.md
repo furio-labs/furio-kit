@@ -1,6 +1,6 @@
 # Adding Features
 
-**TL;DR** — Use the Plop generators to scaffold each FSD slice, fill in the business logic, compose the slices into a widget, wrap the widget in a view, wire the view to an App Router route. This walkthrough builds a product listing page from scratch.
+**TL;DR** — Use the Plop generators to scaffold each FSD slice, fill in the business logic, compose the slices into a widget, wrap the widget in a view, and wire the view to a route with `pnpm generate route`, choosing a read-only or interactive route group. This walkthrough builds a product listing page from scratch.
 
 By the end you will have:
 
@@ -8,7 +8,7 @@ By the end you will have:
 - A `feature` (add-to-cart) with a Server Action and a client form
 - A `widget` (product-section) that composes the entity and feature
 - A `view` (products) that wraps the widget with a Suspense boundary
-- An App Router route at `/products`
+- An App Router route at `/products` in the read-only `(app)` group
 - A unit test for the `ProductCard` component
 
 ---
@@ -19,8 +19,8 @@ By the end you will have:
 1. pnpm generate entity   → "product"
 2. pnpm generate feature  → "add-to-cart"
 3. pnpm generate widget   → "product-section"
-4. Manually create src/views/products/
-5. Manually create app/products/page.tsx
+4. Create src/views/products/
+5. pnpm generate route     → "products", read-only
 6. Write a test for ProductCard
 ```
 
@@ -80,7 +80,7 @@ An async function that fetches from the API and parses the response through the 
 import { ProductListSchema, type Product } from '../model/types'
 
 export async function getProducts(): Promise<Product[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
+  const res = await fetch(`${process.env.API_URL}/products`, {
     next: { revalidate: 60 },
   })
 
@@ -93,6 +93,8 @@ export async function getProducts(): Promise<Product[]> {
 }
 ```
 
+> `API_URL` is a server-only variable (no `NEXT_PUBLIC_` prefix), so the API base URL never reaches the client bundle.
+>
 > `next: { revalidate: 60 }` tells Next.js to cache the response for 60 seconds and revalidate in the background. Remove it or set `{ cache: 'no-store' }` if you need live data on every request.
 
 ### `src/entities/product/ui/ProductCard.tsx`
@@ -168,6 +170,8 @@ src/features/add-to-cart/
 
 A Server Action. The `"use server"` directive makes this function callable directly from Client Components while keeping the implementation server-side. Validate all input with Zod before processing.
 
+It takes the previous state as its first argument so the form can use `useActionState` (below).
+
 ```ts
 'use server'
 
@@ -178,14 +182,22 @@ const AddToCartInputSchema = z.object({
   quantity: z.coerce.number().int().positive().max(99),
 })
 
-export async function addToCartAction(formData: FormData) {
+export interface AddToCartState {
+  success: boolean
+  error?: string
+}
+
+export async function addToCartAction(
+  _prev: AddToCartState,
+  formData: FormData,
+): Promise<AddToCartState> {
   const parsed = AddToCartInputSchema.safeParse({
     productId: formData.get('productId'),
     quantity: formData.get('quantity'),
   })
 
   if (!parsed.success) {
-    return { success: false, error: parsed.error.flatten().fieldErrors }
+    return { success: false, error: 'Enter a quantity between 1 and 99.' }
   }
 
   const { productId, quantity } = parsed.data
@@ -200,37 +212,28 @@ export async function addToCartAction(formData: FormData) {
 
 ### `src/features/add-to-cart/ui/AddToCartForm.tsx`
 
-A Client Component because it owns form state and the submit handler. It receives `productId` as a prop from the server and calls the Server Action on submit.
+A Client Component because it shows pending and error state. It passes the Server Action to `useActionState` and uses the returned action as the form's `action`. The form posts natively before JavaScript loads, so it works on slow links during hydration. React resets the uncontrolled form fields after each submit, including one that returns an error. If users should keep their input after a validation error, return the submitted values in the state and use them as `defaultValue`.
+
+Avoid `onSubmit` with `event.preventDefault()` — that form does nothing until JavaScript has loaded. See [Performance](./10-performance.md#5-forms-that-work-before-javascript-loads).
 
 ```tsx
 'use client'
 
-import { useRef, useTransition } from 'react'
+import { useActionState } from 'react'
 import { Button } from '@/shared/ui'
-import { addToCartAction } from '../actions/add-to-cart-action'
+import { addToCartAction, type AddToCartState } from '../actions/add-to-cart-action'
 
 interface AddToCartFormProps {
   productId: string
 }
 
+const initialState: AddToCartState = { success: false }
+
 export function AddToCartForm({ productId }: AddToCartFormProps) {
-  const formRef = useRef<HTMLFormElement>(null)
-  const [isPending, startTransition] = useTransition()
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-
-    startTransition(async () => {
-      const result = await addToCartAction(formData)
-      if (result.success) {
-        formRef.current?.reset()
-      }
-    })
-  }
+  const [state, formAction, isPending] = useActionState(addToCartAction, initialState)
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="flex items-center gap-2">
+    <form action={formAction} className="flex items-center gap-2">
       <input type="hidden" name="productId" value={productId} />
       <input
         type="number"
@@ -244,10 +247,13 @@ export function AddToCartForm({ productId }: AddToCartFormProps) {
       <Button type="submit" disabled={isPending}>
         {isPending ? 'Adding…' : 'Add to Cart'}
       </Button>
+      {state.error && <p role="alert" className="text-sm text-red-600">{state.error}</p>}
     </form>
   )
 }
 ```
+
+This form needs no Zustand store or TanStack Query, so the route can stay in the provider-free `(app)` group.
 
 ### `src/features/add-to-cart/index.ts`
 
@@ -309,7 +315,7 @@ export { ProductSection } from './ui/ProductSection'
 
 ## Step 4 — Create the View
 
-Views are not scaffolded by the generator — create these files manually.
+Create these files by hand, unless `pnpm generate route` (Step 5) has already created the view for you.
 
 ```
 src/views/products/
@@ -362,16 +368,26 @@ export { ProductsPage } from './ui/ProductsPage'
 
 ## Step 5 — Wire to the App Route
 
-Create the Next.js route file. The App Router maps `app/products/page.tsx` to the `/products` URL. Route files use a default export as required by Next.js.
+Run the route generator:
 
-```
-app/products/
-  page.tsx
+```bash
+pnpm generate route
+# Prompts: route name → products; read-only or interactive → read
 ```
 
-### `app/products/page.tsx`
+The answer decides the route group, and with it how much JavaScript the route ships:
+
+| Answer | Route file | Use when |
+|---|---|---|
+| read | `app/(app)/products/page.tsx` | The page shows data. Forms that post to a Server Action are fine. |
+| interactive | `app/(app)/(interactive)/products/page.tsx` | The page uses Zustand (`useUIStore`, `usePermission`) or TanStack Query. |
+
+The products page only renders data and a Server Action form, so choose **read**. Route groups do not appear in the URL — both locations serve `/products`. See [Performance](./10-performance.md#2-route-groups-where-to-put-a-route) for details.
+
+The route file delegates to the view. It uses a default export, as Next.js requires:
 
 ```tsx
+// app/(app)/products/page.tsx
 import { ProductsPage } from '@/views/products'
 
 export const metadata = {
@@ -387,6 +403,13 @@ Start the dev server and open `http://localhost:3000/products`.
 
 ```bash
 pnpm dev
+```
+
+Before you open a PR, check the route's JavaScript against its budget:
+
+```bash
+pnpm build
+pnpm check:budget
 ```
 
 ---
@@ -472,12 +495,12 @@ pnpm test
 | `src/features/add-to-cart/ui/AddToCartForm.tsx` | feature | Client Component |
 | `src/widgets/product-section/ui/ProductSection.tsx` | widget | Server Component (async) |
 | `src/views/products/ui/ProductsPage.tsx` | view | Server Component |
-| `app/products/page.tsx` | app | Server Component |
+| `app/(app)/products/page.tsx` | app | Server Component |
 
 The import chain respects the FSD hierarchy at every step:
 
 ```
-app/products/page.tsx
+app/(app)/products/page.tsx
   → src/views/products          (view)
     → src/widgets/product-section  (widget)
       → src/entities/product       (entity)
@@ -513,4 +536,4 @@ Mark only the leaf component that actually needs hooks or event handlers as `"us
 
 ---
 
-**Next:** [04-state-management.md](./04-state-management.md) — Zustand for UI state, TanStack Query for server cache, and the SSR hydration handoff pattern.
+**Next:** [04 — Design System](./04-design-system.md) — the adapter pattern and plugging in your organization's UI kit. For state, see [06 — State Management](./06-state-management.md).

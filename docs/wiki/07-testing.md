@@ -59,7 +59,7 @@ Given this API function in `src/entities/product/api/get-products.ts`:
 import { ProductListSchema, type Product } from '../model/types'
 
 export async function getProducts(): Promise<Product[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`)
+  const res = await fetch(`${process.env.API_URL}/products`)
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   const data = await res.json()
   return ProductListSchema.parse(data)

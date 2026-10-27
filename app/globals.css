@@ -1,1 +1,38 @@
 @import "tailwindcss";
+
+/*
+ * Semantic design tokens — the contract between the app and the active kit.
+ * Kit components (src/shared/ui/kit/**) use only these names (bg-primary,
+ * text-muted-foreground, border-border, rounded-control...), never palette
+ * classes. To re-skin, change the values here or point them at your design
+ * system's variables. Names and meaning: src/shared/ui/kit/CONTRACT.md.
+ *
+ * `static` always emits every token as a CSS variable, so kit stylesheets can
+ * use var(--color-primary) even if no utility class references it. Values are
+ * literal (not var(--color-blue-600)) so they never depend on
+ * Tailwind emitting a palette variable that nothing else uses.
+ */
+@theme static {
+  --color-background: oklch(98.5% 0.002 247.839); /* gray-50 */
+  --color-foreground: oklch(21% 0.034 264.665); /* gray-900 */
+  --color-surface: #fff; /* cards, header */
+  --color-border: oklch(92.8% 0.006 264.531); /* gray-200 */
+  --color-muted: oklch(96.7% 0.003 264.542); /* gray-100 */
+  --color-muted-foreground: oklch(55.1% 0.027 264.364); /* gray-500 */
+
+  --color-primary: oklch(54.6% 0.245 262.881); /* blue-600 */
+  --color-primary-hover: oklch(48.8% 0.243 264.376); /* blue-700 */
+  --color-primary-foreground: #fff;
+
+  --color-secondary: oklch(96.7% 0.003 264.542); /* gray-100 */
+  --color-secondary-hover: oklch(92.8% 0.006 264.531); /* gray-200 */
+  --color-secondary-foreground: oklch(21% 0.034 264.665); /* gray-900 */
+
+  --color-ghost-foreground: oklch(37.3% 0.034 259.733); /* gray-700 */
+
+  --color-danger: oklch(57.7% 0.245 27.325); /* red-600 */
+  --color-danger-foreground: #fff;
+
+  --radius-control: 0.375rem; /* buttons, inputs */
+  --radius-surface: 0.5rem; /* cards, panels */
+}

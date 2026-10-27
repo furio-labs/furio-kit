@@ -1,13 +1,21 @@
+import 'server-only'
 import { z } from 'zod'
+import { env } from '@/shared/env'
 import { {{pascalCase name}}Schema } from '../model/types'
 
 const {{pascalCase name}}sResponseSchema = z.array({{pascalCase name}}Schema)
 
+// Call from request-time code only (e.g. after `await connection()` in an async
+// Server Component) so results are never prerendered at build time.
 export async function get{{pascalCase name}}s() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  // Server-only variable: NEXT_PUBLIC_* would inline the backend URL into browser bundles.
+  const apiUrl = env.API_URL
 
   if (!apiUrl) {
-    // TODO: replace with real mock data
+    if (env.NODE_ENV === 'production') {
+      throw new Error('API_URL is not set; refusing to serve mock {{name}}s in production.')
+    }
+    // TODO: replace with real dev mock data
     return {{pascalCase name}}sResponseSchema.parse([])
   }
 

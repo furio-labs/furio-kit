@@ -16,9 +16,10 @@
       "trailingCommas": "es5"
     }
   },
+  "css": { "parser": { "tailwindDirectives": true } },
   "markdown": { "formatter": { "enabled": false } },
   "yaml": { "formatter": { "enabled": false } },
   "files": {
-    "includes": ["**", "!**/.next", "!**/node_modules", "!**/docs"]
+    "includes": ["**", "!**/.next", "!**/node_modules", "!**/docs", "!**/.worktrees", "!**/.claude/worktrees"]
   }
 }

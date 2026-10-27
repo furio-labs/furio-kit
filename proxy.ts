@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { authAdapter } from '@/shared/auth'
+import { getAuthAdapter } from '@/shared/auth/server'
 
 const PUBLIC_PATHS = ['/login', '/api/auth', '/403']
 
@@ -13,6 +13,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (isPublic(pathname)) return NextResponse.next()
 
+  const authAdapter = await getAuthAdapter()
   const session = await authAdapter.validateRequest(request)
 
   if (!session) {

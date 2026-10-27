@@ -1,0 +1,18 @@
+// Server Component — orchestrates layout and <Suspense> streaming boundaries.
+{{#if interactive}}
+// Lives in the (interactive) route group: StoreProvider and QueryProvider are mounted,
+// so client islands rendered here may use useUIStore, usePermission and TanStack Query.
+{{else}}
+// Lives in the read-only route group: no client providers are mounted, so nothing
+// rendered here may call useUIStore, usePermission or TanStack Query hooks.
+// Move the route under app/(app)/(interactive)/ if it needs them.
+{{/if}}
+export function {{pascalCase slice}}Page() {
+  return (
+    <section className="mx-auto max-w-5xl px-6 py-12">
+      <h1 className="mb-8 text-3xl font-bold text-foreground">{{title}}</h1>
+
+      {/* TODO: compose widgets and features for /{{path}} */}
+    </section>
+  )
+}

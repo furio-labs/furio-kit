@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       {/* suppressHydrationWarning suppresses false-positive hydration errors caused by
           browser extensions (password managers, accessibility tools) injecting attributes
           onto <body> before React hydrates. */}
-      <body suppressHydrationWarning className="min-h-screen bg-gray-50 text-gray-900">
+      <body suppressHydrationWarning className="min-h-screen bg-background text-foreground">
         {children}
       </body>
     </html>

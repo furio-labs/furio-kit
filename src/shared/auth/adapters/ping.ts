@@ -3,8 +3,13 @@
  *
  * To activate:
  *   1. pnpm add jose
- *   2. Set env vars: PING_ISSUER, PING_CLIENT_ID, PING_CLIENT_SECRET
- *   3. In src/shared/auth/index.ts, replace `mockAdapter` with `pingAdapter`.
+ *   2. Set env vars: PING_ISSUER, PING_CLIENT_ID, PING_CLIENT_SECRET,
+ *      APP_BASE_URL (this app's public origin, used for the callback URL)
+ *   3. Set AUTH_PROVIDER=ping (selection happens in src/shared/auth/server.ts).
+ *
+ * Install `jose` *before* adding its imports here: the bundler resolves every
+ * adapter in server.ts at build time, even unselected ones, so a missing
+ * package fails `pnpm build` for every AUTH_PROVIDER value.
  *
  * This adapter validates the JWT in the session cookie using `jose` and maps
  * Ping's claims → the shared Session type through Zod.
@@ -49,7 +54,7 @@ export const pingAdapter: AuthAdapter = {
   getLoginUrl(returnTo = '/') {
     const issuer = process.env.PING_ISSUER ?? ''
     const clientId = process.env.PING_CLIENT_ID ?? ''
-    const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/auth/callback`)
+    const redirectUri = encodeURIComponent(`${process.env.APP_BASE_URL ?? ''}/api/auth/callback`)
     const state = encodeURIComponent(returnTo)
     return `${issuer}/as/authorization.oauth2?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=openid+profile+email&state=${state}`
   },

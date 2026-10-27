@@ -1,3 +1,12 @@
+import { existsSync } from 'node:fs'
+
+// Route groups by JS cost: read-only routes live directly in app/(app)/; routes that
+// need client state/cache (Zustand, TanStack Query) live in app/(app)/(interactive)/.
+const ROUTE_GROUPS = {
+  read: 'app/(app)',
+  interactive: 'app/(app)/(interactive)',
+}
+
 /** @param {import('plop').NodePlopAPI} plop */
 export default function (plop) {
   // Helpers
@@ -90,6 +99,108 @@ export default function (plop) {
         path: 'src/widgets/{{name}}/index.ts',
         templateFile: 'plop-templates/widget/index.ts.hbs',
       },
+    ],
+  })
+
+  // ─── Route ───────────────────────────────────────────────────────────────────
+  plop.setGenerator('route', {
+    description: 'Create an App Router route + its FSD views slice',
+    prompts: [
+      {
+        type: 'input',
+        name: 'path',
+        message: 'Route path (kebab-case segments, e.g. reports/monthly):',
+        validate: (v) => {
+          if (!/^[a-z][a-z0-9-]*(\/[a-z][a-z0-9-]*)*$/.test(v)) {
+            return 'Use kebab-case segments separated by "/" (e.g. reports/monthly)'
+          }
+          const taken = Object.values(ROUTE_GROUPS).find((dir) => existsSync(`${dir}/${v}/page.tsx`))
+          return taken ? `/${v} already exists in ${taken}/` : true
+        },
+      },
+      {
+        type: 'list',
+        name: 'group',
+        message: 'Route group:',
+        choices: [
+          { name: 'read — Server Components only, no client providers (default)', value: 'read' },
+          {
+            name: 'interactive — mounts StoreProvider + QueryProvider (Zustand, TanStack Query)',
+            value: 'interactive',
+          },
+        ],
+      },
+    ],
+    actions: (data) => {
+      const slice = data.path.replaceAll('/', '-')
+      const segment = data.path.split('/').at(-1)
+      Object.assign(data, {
+        slice,
+        interactive: data.group === 'interactive',
+        title: segment
+          .split('-')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' '),
+      })
+      return [
+        {
+          type: 'add',
+          path: `${ROUTE_GROUPS[data.group]}/{{path}}/page.tsx`,
+          templateFile: 'plop-templates/route/app/page.tsx.hbs',
+        },
+        {
+          type: 'add',
+          path: 'src/views/{{slice}}/ui/{{pascalCase slice}}Page.tsx',
+          templateFile: 'plop-templates/route/views/ui/Page.tsx.hbs',
+        },
+        {
+          type: 'add',
+          path: 'src/views/{{slice}}/index.ts',
+          templateFile: 'plop-templates/route/views/index.ts.hbs',
+        },
+      ]
+    },
+  })
+
+  // ─── Adapter ─────────────────────────────────────────────────────────────────
+  plop.setGenerator('adapter', {
+    description: 'Create a shared/ui adapter wrapping a #ui-kit primitive',
+    prompts: [
+      {
+        type: 'input',
+        name: 'name',
+        message: 'Component name (PascalCase, e.g. Select):',
+        validate: (v) => {
+          if (!/^[A-Z][A-Za-z0-9]*$/.test(v)) return 'Use PascalCase (e.g. Select)'
+          return existsSync(`src/shared/ui/${v}`) ? `src/shared/ui/${v}/ already exists` : true
+        },
+      },
+      {
+        type: 'confirm',
+        name: 'interactive',
+        message: 'Does the adapter itself use hooks, refs or browser APIs (adds "use client")?',
+        default: false,
+      },
+    ],
+    actions: [
+      {
+        type: 'add',
+        path: 'src/shared/ui/{{name}}/{{name}}.tsx',
+        templateFile: 'plop-templates/adapter/Adapter.tsx.hbs',
+      },
+      {
+        type: 'add',
+        path: 'src/shared/ui/{{name}}/index.ts',
+        templateFile: 'plop-templates/adapter/index.ts.hbs',
+      },
+      {
+        type: 'append',
+        path: 'src/shared/ui/index.ts',
+        templateFile: 'plop-templates/adapter/barrel-export.ts.hbs',
+        separator: '',
+      },
+      (data) =>
+        `Next: export ${data.name} from the kit in src/shared/ui/kit/default/ so '#ui-kit' resolves it.`,
     ],
   })
 }
