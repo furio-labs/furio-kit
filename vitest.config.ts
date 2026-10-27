@@ -12,6 +12,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      // `server-only` / `client-only` throw unless resolved with the bundler's
+      // react-server (or client) condition, which Vitest doesn't set. Point both
+      // markers at their no-op entry so server and client modules are testable.
+      'server-only': resolve(__dirname, './node_modules/server-only/empty.js'),
+      'client-only': resolve(__dirname, './node_modules/client-only/index.js'),
     },
   },
 })

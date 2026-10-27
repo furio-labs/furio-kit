@@ -1,3 +1,5 @@
 export { LoginForm } from './ui/LoginForm'
+export type { LoginFormProps } from './ui/LoginForm'
 export { loginAction } from './actions/login-action'
-export type { LoginActionState } from './actions/login-action'
+export { LOGIN_ERRORS } from './model/login-errors'
+export type { LoginErrorCode } from './model/login-errors'

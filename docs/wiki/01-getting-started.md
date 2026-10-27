@@ -68,16 +68,31 @@ The repository ships with a `.env.example` file. Copy it to `.env.local` — Nex
 cp .env.example .env.local
 ```
 
-Open `.env.local` and fill in the two required variables:
+Open `.env.local` and review these variables:
 
 | Variable | Purpose |
 |---|---|
 | `NEXT_PUBLIC_APP_NAME` | App display name shown in the UI and browser tab |
-| `NEXT_PUBLIC_API_URL` | Base URL for your backend REST API (e.g. `http://localhost:4000`) |
+| `API_URL` | Base URL for your backend REST API (e.g. `http://localhost:4000`). Server-only. Leave it unset in development to use the built-in mock data; in production an unset `API_URL` makes data requests fail with an error rather than serve mock data |
+| `AUTH_PROVIDER` | `mock` (default), `auth0` or `ping`. Selects the auth adapter at runtime; no code change needed. `mock` authenticates nobody in production |
+| `MOCK_AUTH_USER` | Development only, with `AUTH_PROVIDER=mock`: any non-empty value gives you a mock admin session |
 
-The auth variables (`AUTH_SECRET`, `AUTH0_*`, `PING_*`) are commented out. Leave them commented until you wire up an authentication provider. See [05-auth.md](./05-auth.md) for setup instructions.
+`NODE_ENV`, `AUTH_PROVIDER` and `API_URL` are validated with Zod in `src/shared/env.ts` at server startup (via `instrumentation.ts`); an invalid value, such as a malformed `API_URL` or an unknown `AUTH_PROVIDER`, is reported as a Zod error in the server log at startup and every request fails with HTTP 500 until it is fixed.
 
-> Never use the `NEXT_PUBLIC_` prefix for secrets. Variables without that prefix are server-only and are never included in the client bundle.
+The provider variables (`AUTH_SECRET`, `APP_BASE_URL`, `AUTH0_*`, `PING_*`) are commented out. Leave them commented until you wire up an authentication provider. See [05-auth.md](./05-auth.md) for setup instructions.
+
+> Never use the `NEXT_PUBLIC_` prefix for secrets or backend addresses. `NEXT_PUBLIC_` variables are inlined into the browser bundle; variables without that prefix stay on the server.
+
+### Building and previewing locally
+
+`pnpm build` prerenders static routes, so build with the same environment as CI rather than your `.env.local`:
+
+```bash
+API_URL= NEXT_PUBLIC_APP_NAME=furio-kit AUTH_PROVIDER=mock pnpm build
+pnpm start
+```
+
+With the default mock adapter, a production server serves `/login` and `/403`, and redirects every protected route to `/login` (the mock never authenticates anyone under `NODE_ENV=production`). Configure a real provider to sign in.
 
 ---
 
@@ -94,7 +109,7 @@ The app opens at [http://localhost:3000](http://localhost:3000) with Turbopack f
 
 **What you see out of the box:**
 
-- A **home page** (`/`) with a user list rendered from the `entities/user` starter content.
+- A **home page** (`/`) with a user list rendered from the `entities/user` starter content. It is a protected route: set `MOCK_AUTH_USER=1` in `.env.local` to see it, otherwise you are redirected to `/login`.
 - A **login page** (`/login`) wired to the `features/auth` stub.
 
 Both are starter content — they demonstrate the FSD layer conventions and are meant to be replaced.

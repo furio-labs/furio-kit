@@ -3,7 +3,8 @@ import type { Session } from './types'
 
 /**
  * AuthAdapter defines the contract every authentication provider must satisfy.
- * Swap out the active adapter in `src/shared/auth/index.ts` — one line change.
+ * The active adapter is selected by the AUTH_PROVIDER env var; see
+ * `getAuthAdapter()` in `src/shared/auth/server.ts`.
  */
 export interface AuthAdapter {
   /**

@@ -3,8 +3,13 @@
  *
  * To activate:
  *   1. pnpm add @auth0/nextjs-auth0
- *   2. Set env vars: AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH_SECRET
- *   3. In src/shared/auth/index.ts, replace `mockAdapter` with `auth0Adapter`.
+ *   2. Set env vars: AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH_SECRET,
+ *      APP_BASE_URL (this app's public origin, used for the callback URL)
+ *   3. Set AUTH_PROVIDER=auth0 (selection happens in src/shared/auth/server.ts).
+ *
+ * Install the SDK *before* adding its imports here: the bundler resolves every
+ * adapter in server.ts at build time, even unselected ones, so a missing
+ * package fails `pnpm build` for every AUTH_PROVIDER value.
  *
  * This file shows how to map Auth0's session shape → the shared Session type.
  * Swap in the real @auth0/nextjs-auth0 imports and remove the stubs below.
@@ -52,7 +57,7 @@ export const auth0Adapter: AuthAdapter = {
   getLoginUrl(returnTo = '/') {
     const domain = process.env.AUTH0_DOMAIN ?? ''
     const clientId = process.env.AUTH0_CLIENT_ID ?? ''
-    const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/auth/callback`)
+    const redirectUri = encodeURIComponent(`${process.env.APP_BASE_URL ?? ''}/api/auth/callback`)
     const state = encodeURIComponent(returnTo)
     return `https://${domain}/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=openid+profile+email&state=${state}`
   },
