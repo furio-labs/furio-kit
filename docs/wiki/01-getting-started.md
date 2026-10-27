@@ -133,7 +133,7 @@ src/
   widgets/            Self-contained page sections — Header, Sidebar, Dashboard panels
   views/              Full route screens composed from widgets and features
 .github/              CI workflows, Dependabot config, Copilot instructions
-.claude/              Claude Code hooks, triggers, and settings
+.claude/              Claude Code hooks and settings
 docs/wiki/            This wiki
 ```
 

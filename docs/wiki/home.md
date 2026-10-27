@@ -16,7 +16,7 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 | TanStack Query | v5 | Client-side cache, optimistic updates |
 | Zustand | v5 | Client UI state (SSR-safe factory pattern) |
 | Zod | v4 | Runtime schema validation at system boundaries |
-| Vitest | v4 | Unit and integration tests |
+| Vitest | v5 | Unit and integration tests |
 | `@org/ui-kit` | org-supplied | External design system (Atoms + Molecules) |
 
 ## Guides
