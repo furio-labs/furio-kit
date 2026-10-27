@@ -125,44 +125,73 @@ GitHub Actions evaluates `${{ }}` expressions before the shell sees the command.
   run: curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" -d "Build failed"
 ```
 
-### Example: a performance budget workflow
+> CI already enforces a per-route first-load JS budget (`pnpm check:budget` in `ci.yml`). To change limits, see [section 3](#3-tuning-the-js-budget) rather than adding a workflow.
 
-```yaml
-name: Performance
+---
 
-on:
-  pull_request:
-    branches: [main]
+## 3. Tuning the JS Budget
 
-jobs:
-  perf:
-    name: Bundle size check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
+`scripts/bundle-budget.json` sets the gzip budget (1 KB = 1024 bytes) for each route group, plus optional per-route overrides:
 
-      - uses: pnpm/action-setup@v6
+```json
+{
+  "groups": {
+    "read": { "gzipKb": 140 },
+    "interactive": { "gzipKb": 200 }
+  },
+  "routes": {
+    "/reports": {
+      "gzipKb": 170,
+      "reason": "Charting library; lazy-loading tracked in #123"
+    }
+  }
+}
+```
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
+- **Group budgets** apply to every route in the group. A route counts as `interactive` when its app path contains an `(interactive)` route group (`app/(app)/(interactive)/orders/page.tsx`). Every other route is `read`.
+- **Overrides** are keyed by URL path as it appears in the budget table (`/reports`, `/orders/[id]`), not by file path. Always include a `reason`. The check fails on an override that matches no route, so stale entries can't build up.
+- **Before you raise a budget**, try shrinking the route first. Push `"use client"` further down the tree, move providers to the `(interactive)` layout, or lazy-load heavy client widgets with `next/dynamic`.
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+Check locally after a build that uses CI's env (see `ci.yml`), not `.env.local`:
 
-      - name: Build
-        run: pnpm build
-
-      - name: Check bundle size
-        run: node scripts/check-bundle-size.mjs
-        env:
-          SIZE_LIMIT_KB: ${{ vars.BUNDLE_SIZE_LIMIT_KB }}
+```bash
+pnpm build && pnpm check:budget
 ```
 
 ---
 
-## 3. Adding a New Claude Code Hook
+## 4. Adding an Architecture Rule
+
+Import-graph rules live in `.dependency-cruiser.cjs` and run with `pnpm check:arch`, both in CI (`architecture-guard.yml`) and in the optional pre-push hook. Each entry in `forbidden` names a `from` set of modules and a `to` set they must not import. Paths are regexes, relative to the repo root, and match the **resolved** file, so aliases, relative paths, `#ui-kit`, dynamic `import()` and re-exports are all covered.
+
+Example: keep `src/shared/observability` from being imported by client-side UI adapters.
+
+```js
+{
+  name: 'observability-not-in-ui',
+  severity: 'error',
+  comment: 'shared/ui adapters run on the client; log from Server Components or Server Actions.',
+  from: { path: '^src/shared/ui/' },
+  to: { path: '^src/shared/observability/' },
+},
+```
+
+Useful building blocks:
+
+| Need | Use |
+|---|---|
+| Forbid transitive access, not just direct imports | `to: { path: '…', reachable: true }` |
+| Refer to part of the importer's path | Capture groups in `from.path`, then `$1`, `$2` in `to.path` / `to.pathNot` (see `fsd-no-cross-slice`) |
+| Match an npm package | `to: { path: '^package-name($\|/)' }` for an unresolved name, or `'(^\|/)node_modules/package-name/'` for an installed one |
+| Report without failing CI | `severity: 'warn'` |
+
+Before you commit a new rule, prove that it fires. Add a temporary import that violates it, run `pnpm check:arch` and confirm the rule's name appears, then remove the import. A rule with a typo in its regex passes silently.
+
+Checks about files rather than imports, such as "every slice has an `index.ts`", belong in a small Node script in `scripts/` called from `architecture-guard.yml` and `.claude/hooks/check-architecture.sh` (see `scripts/check-barrels.mjs`).
+
+---
+
+## 5. Adding a New Claude Code Hook
 
 Hooks let you run scripts when Claude Code uses certain tools. The project uses them to enforce security reminders, block bad commits, and catch architecture violations before a push.
 
@@ -244,11 +273,11 @@ exit 0
 
 The `matcher` field is a regex matched against the tool name (`Bash`, `Edit`, `Write`, `Read`, etc.). Use `"if"` to narrow further by the tool's arguments — see the existing `check-staged.sh` registration for an example of matching `git commit *`.
 
-The existing hooks are in `.claude/hooks/` and cover three cases: security reminders on file edits (`security-reminder.sh`), pre-commit checks for lint errors and debug statements (`check-staged.sh`), and FSD layer validation before a push (`check-architecture.sh`). Read those scripts before writing a new one — they show the full pattern including how to produce structured error output.
+The existing hooks are in `.claude/hooks/` and cover three cases: security reminders on file edits (`security-reminder.sh`), pre-commit checks for lint errors and debug statements (`check-staged.sh`), and the import-graph and barrel checks before a push (`check-architecture.sh`, which calls `pnpm check:arch`). Read those scripts before writing a new one — they show the full pattern including how to produce structured error output.
 
 ---
 
-## 4. Customizing Biome Rules
+## 6. Customizing Biome Rules
 
 `biome.json` is the single config file for linting and formatting. It replaces both ESLint and Prettier.
 
@@ -298,7 +327,7 @@ After changing `biome.json`, run `pnpm lint` to verify no existing code is newly
 
 ---
 
-## 5. Upgrading Major Dependencies
+## 7. Upgrading Major Dependencies
 
 ### Upgrade process
 
@@ -319,7 +348,7 @@ A dependency is a candidate to hold when: it requires changes to more than a han
 
 ---
 
-## 6. Pulling Upstream Changes
+## 8. Pulling Upstream Changes
 
 If you bootstrapped from furio-kit using `degit`, there is no upstream remote by default. Add it when you want to pull in template updates:
 
@@ -358,7 +387,7 @@ This works well for pulling in a single security workflow update or a Plop templ
 
 ---
 
-## 7. When to Diverge
+## 9. When to Diverge
 
 Forking the template creates a trade-off: customization now versus ease of pulling upstream changes later. Here is a practical guide to which customizations are safe and which carry long-term cost.
 
@@ -377,7 +406,7 @@ These files are expected to differ between teams and rarely receive upstream cha
 Changing these files means you must manually audit upstream changes each time you want to pull:
 
 - **CI workflows** (`.github/workflows/`) — security-related workflows (audit, CodeQL) receive updates when vulnerabilities are disclosed. If you diverge here, you own the responsibility of tracking those updates yourself. Prefer adding new workflow files rather than modifying existing ones.
-- **FSD layer rules and hook scripts** (`.claude/hooks/check-architecture.sh`) — these encode the architectural guarantees the template provides. Relaxing them is almost always a mistake. Tightening them (adding more checks) is fine.
+- **FSD layer rules** (`.dependency-cruiser.cjs`, `scripts/check-barrels.mjs`) — these encode the architectural guarantees the template provides. Relaxing them is almost always a mistake. Tightening them (adding more checks) is fine.
 - **Dependabot configuration** (`.github/dependabot.yml`) — automated dependency updates are a security control. Disabling or narrowing them creates risk.
 
 ### Keep syncing — do not diverge

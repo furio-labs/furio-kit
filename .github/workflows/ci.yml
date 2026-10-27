@@ -55,6 +55,12 @@ jobs:
       - name: Build
         run: pnpm build
         env:
+          API_URL: ''
           NEXT_PUBLIC_APP_NAME: furio-kit
           AUTH_PROVIDER: mock
-          NEXT_PUBLIC_UI_KIT_CONNECTED: 'false'
+
+      # Per-route first-load JS budget (scripts/bundle-budget.json). Bundle
+      # output doesn't depend on the Node version, so one matrix leg is enough.
+      - name: JS budget
+        if: matrix.node-version == 24
+        run: pnpm check:budget

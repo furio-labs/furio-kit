@@ -10,10 +10,10 @@ Seven workflows run in `.github/workflows/`.
 
 | Workflow | File | Trigger | What it does | Blocks merge? |
 |---|---|---|---|---|
-| CI | `ci.yml` | push/PR to `main` | TypeScript typecheck (`tsc --noEmit`), Biome lint, Vitest test suite, **production build** (`pnpm build`) | Yes |
+| CI | `ci.yml` | push/PR to `main` | TypeScript typecheck (`tsc --noEmit`), Biome lint, Vitest test suite, **production build** (`pnpm build`), **per-route JS budget** (`pnpm check:budget`, Node 24 leg) | Yes |
 | Audit | `audit.yml` | push/PR to `main`, weekly Monday 08:00 UTC | `pnpm audit --audit-level=high` | Yes |
 | CodeQL | `codeql.yml` | push/PR to `main`, weekly Monday 08:00 UTC | GitHub CodeQL security analysis (JavaScript/TypeScript) | Yes |
-| Architecture Guard | `architecture-guard.yml` | PR to `main` (any `src/` change) | FSD layer violations, adapter pattern, barrel exports, deep imports | Yes |
+| Architecture Guard | `architecture-guard.yml` | PR to `main` | Import-graph rules via dependency-cruiser (`pnpm check:arch`): FSD layers, slice isolation, public APIs, UI kit and server-only boundaries, cycles; barrel exports | Yes |
 | Dependabot Auto-Merge | `dependabot-auto.yml` | Any Dependabot PR | Auto-merges patch/minor, labels major for review | No (enables auto-merge) |
 | Stale | `stale.yml` | Daily 06:00 UTC | Labels PRs/issues inactive for 14 days, closes after 7 more | N/A |
 | Release Please | `release-please.yml` | push to `main` | Opens/updates a Release PR that bumps `package.json` version and updates `CHANGELOG.md`; merging the PR creates a GitHub Release and tag | No |
@@ -28,12 +28,15 @@ A merge to `main` is blocked if any of the following fail:
 - **Lint failures** — Biome reports errors (`ci.yml`)
 - **Test failures** — any Vitest test fails or a test suite errors out (`ci.yml`)
 - **Build failures** — `pnpm build` exits non-zero; catches runtime import errors and missing env var issues that TypeScript alone cannot detect (`ci.yml`)
+- **JS budget breaches** — a route's first-load JS exceeds its budget in `scripts/bundle-budget.json` (`ci.yml`, see [JS budget](#js-budget))
 - **High or critical vulnerabilities** — `pnpm audit --audit-level=high` finds a matching advisory (`audit.yml`)
 - **CodeQL findings** — GitHub's semantic analysis flags a security issue (`codeql.yml`)
 - **FSD violations** — a layer imports from above itself, or a slice imports from a peer slice (`architecture-guard.yml`)
-- **Adapter pattern violations** — `@org/ui-kit` is imported outside `src/shared/ui/` (`architecture-guard.yml`)
-- **Missing barrel exports** — a slice under `entities/`, `features/`, or `widgets/` has no `index.ts` (`architecture-guard.yml`)
-- **Deep imports** — an import uses three or more path segments after `@/` into a sliced layer (`architecture-guard.yml`)
+- **Design system boundary violations** — `@org/ui-kit` imported outside `src/shared/ui/kit/`, or `#ui-kit` imported outside `src/shared/ui/` (`architecture-guard.yml`)
+- **Server-only leaks** — `src/shared/auth/server.ts` reachable from `src/shared/auth/client.ts` or a UI adapter (`architecture-guard.yml`)
+- **Deep imports** — code outside a slice imports its internals instead of its `index.ts` (`architecture-guard.yml`)
+- **Circular or unresolvable imports** (`architecture-guard.yml`)
+- **Missing barrel exports** — a slice under `entities/`, `features/`, `widgets/` or `views/` has no `index.ts` (`architecture-guard.yml`)
 
 Stale and Dependabot Auto-Merge do not block merge.
 
@@ -41,82 +44,107 @@ Stale and Dependabot Auto-Merge do not block merge.
 
 ## 3. Architecture Guard details
 
-`architecture-guard.yml` runs four independent checks on every PR that touches `src/`. The job posts a comment to the PR after each run and updates it on subsequent pushes, so you always see the current state.
+`architecture-guard.yml` runs on every PR to `main`. It installs dependencies, runs two checks, and posts a PR comment that it updates on later pushes, so the comment always shows the current state.
 
-### The five checks
+### Check 1: Import graph (`pnpm check:arch`)
 
-**Check 1: FSD layer imports**
+[dependency-cruiser](https://github.com/sverweij/dependency-cruiser) (MIT) resolves every import in `src/`, `app/`, `proxy.ts` and `instrumentation.ts` and validates the graph against the rules in `.dependency-cruiser.cjs`. Because it checks the **resolved** graph rather than grepping source text, it sees all of these forms:
 
-Imports must flow strictly downward through the layer hierarchy:
+- `@/…` path aliases (via `tsconfig.json`) and relative `../` paths
+- the `#ui-kit` subpath import (via `package.json` `"imports"`)
+- dynamic `import()`, `export … from`, `require()` and `import type`
 
-```
-app > views > widgets > features > entities > shared
-```
+The grep-based checks this replaced only matched `from '@/…'`, so relative paths, dynamic imports and re-exports went unchecked, and `app/` was never checked at all.
 
-The check catches two violation types:
+| Rule | Fails when |
+|---|---|
+| `fsd-layer-<layer>` | A layer imports from a higher one. Order: `shared < entities < features < widgets < views < app`. `src/**` must not import `app/`, `proxy.ts` or `instrumentation.ts`. `app/` may import any layer. |
+| `fsd-no-cross-slice` | A slice imports another slice on the same layer (`features/cart` → `features/auth`). |
+| `fsd-public-api-from-slice` / `fsd-public-api` | Code outside a slice imports its internals (`@/entities/user/api/get-users`) instead of its `index.ts` (`@/entities/user`). Applies to `app/` too. A slice's own files can import each other freely. |
+| `ui-kit-package-only-in-kit` | `@org/ui-kit` is imported outside a kit binding in `src/shared/ui/kit/`. |
+| `ui-kit-alias-only-in-shared-ui` | `#ui-kit`, or any file under `src/shared/ui/kit/`, is imported from outside `src/shared/ui/`. |
+| `auth-server-not-from-client` | `src/shared/auth/server.ts` is reachable, directly or transitively, from `src/shared/auth/client.ts` or from any adapter in `src/shared/ui/`. |
+| `no-circular` | Two or more modules import each other in a cycle. |
+| `not-to-unresolvable` | An import doesn't resolve. This also guards the other rules: if an alias stopped resolving, its imports would silently drop out of every path-based rule. |
+| `not-to-test` | Runtime code imports a `*.test.ts(x)` file. |
+| `no-orphans` (warning) | A module in `src/` is imported by nothing. Warnings don't fail the check. Route files in `app/`, the root entry files, tests and `.d.ts` files are excluded. |
 
-- A layer importing from a layer above it (e.g., `shared/` importing from `entities/`)
-- A cross-slice import at the same layer (e.g., `entities/user/` importing from `entities/product/`)
+Run it locally with `pnpm check:arch`. For a graph of a single folder, run `pnpm exec depcruise src/features --config .dependency-cruiser.cjs --output-type text`.
 
-**Check 2: Adapter pattern**
+> **Parser requirement.** dependency-cruiser parses TypeScript with `@swc/core` (`parser: 'swc'`). Its `tsc` parser only supports `typescript` below 7, and this repo uses 7. If no TypeScript-capable parser is installed, `.dependency-cruiser.cjs` throws instead of letting dependency-cruiser skip every `.ts`/`.tsx` file and report a false "no violations".
 
-`@org/ui-kit` may only be imported inside `src/shared/ui/`. Any import of `@org/ui-kit` found elsewhere in `src/` fails this check.
+### Check 2: Barrel exports (`node scripts/check-barrels.mjs`)
 
-**Check 3: Barrel exports**
+Every slice directory under `entities/`, `features/`, `widgets/` and `views/` must contain an `index.ts`. dependency-cruiser checks imports, not missing files, so a small script handles this check.
 
-Every slice directory under `entities/`, `features/`, and `widgets/` must contain an `index.ts`. The check lists every slice directory that is missing one.
+### Removed: UI kit connection guard
 
-**Check 4: Deep imports**
-
-External code must import from the slice root, not from internal files:
-
-```ts
-// correct
-import { UserCard } from '@/entities/user'
-
-// blocked — three segments after @/
-import { getUsers } from '@/entities/user/api/get-users'
-```
-
-The check flags any import matching `@/(entities|features|widgets|views)/<slice>/<anything>`.
-
-**Check 5: UI kit connection guard (opt-in)**
-
-When the repository variable `ENFORCE_UI_KIT_CONNECTED` is set to `true`, the workflow scans `src/shared/ui/` for the stub error message (`furio-kit.*adapter is not connected`). Any adapter still using the unconnected stub fails this check.
-
-Enable it once your design system package is installed and all adapters are wired:
-
-```bash
-gh variable set ENFORCE_UI_KIT_CONNECTED --body "true"
-```
-
-Leave it unset (the default) when developing before `@org/ui-kit` is available.
+The former Check 5 (`ENFORCE_UI_KIT_CONNECTED`, which scanned for the "adapter is not connected" stub) is gone. Adapters now import primitives through the `#ui-kit` subpath import, which resolves at build time to a real kit. An unwired kit fails `pnpm build` and `not-to-unresolvable`, so no runtime stub or opt-in check is needed. You can delete the `ENFORCE_UI_KIT_CONNECTED` repository variable if you set it.
 
 ### Reading the PR comment
-
-The Architecture Guard comment uses this format:
 
 ```
 ## Architecture Guard
 
 One or more architecture checks failed. Please review the violations below.
 
-### ❌ FSD layer violations (imports must flow downward; no cross-slice imports)
+### ❌ Import graph: FSD layers, slice isolation, public APIs, UI kit and server-only boundaries, cycles (`pnpm check:arch`)
 
-src/features/login/ui/LoginForm.tsx:3:import { getUsers } from '@/entities/user/api/get-users'
+  error fsd-public-api-from-slice: src/features/auth/ui/LoginForm.tsx → src/entities/user/api/get-users.ts
+    Import another slice through its public index.ts (`@/entities/user`), not its internals …
+
+### ✅ Barrel exports (`index.ts` required for every slice)
 ```
 
-Each failing check includes the exact file, line number, and import that triggered it. A passing check shows a checkmark and no body.
+Each violation names the rule, the importing file and the resolved target, followed by the rule's explanation.
 
 ### What to do when it fails
 
-1. Read the violation lines in the PR comment — each line shows the file and import to fix.
-2. For FSD violations: move the import to a lower layer, or restructure so the dependency flows downward.
-3. For adapter violations: add an adapter in `src/shared/ui/<Component>/` and import from `@/shared/ui` instead.
-4. For missing barrels: create `src/<layer>/<slice>/index.ts` and export the public surface.
-5. For deep imports: change the import path to the slice root (`@/entities/user`, not `@/entities/user/api/get-users`).
-6. For UI kit connection (Check 5): wire the adapter to the real `@org/ui-kit` import and remove the stub throw.
-7. Push the fix — the guard re-runs automatically and updates the comment.
+1. Read the rule name and the `from → to` pair in the PR comment or the job log.
+2. `fsd-layer-*`: move the shared code down a layer, or restructure so the dependency flows downward.
+3. `fsd-no-cross-slice`: move the shared part into a lower layer (often `entities` or `shared`), or compose the two slices in a higher layer.
+4. `fsd-public-api*`: export what you need from the slice's `index.ts` and import the slice root.
+5. `ui-kit-*`: add or extend an adapter in `src/shared/ui/<Component>/` and import it from `@/shared/ui`.
+6. `auth-server-not-from-client`: keep server-only code behind Server Components or Server Actions. Pass data down as props.
+7. Missing barrel: create `src/<layer>/<slice>/index.ts` and export the slice's public surface.
+8. Push the fix. The guard re-runs automatically and updates the comment.
+
+---
+
+## JS budget
+
+`ci.yml` runs `pnpm check:budget` after the build, on the Node 24 leg only, because the bundle doesn't depend on the Node version. Next 16 no longer prints route sizes in the build output, so without this step nothing catches client JS growth.
+
+For every app route, `scripts/check-bundle-budget.mjs` computes the JS a modern browser downloads on first load. It reads the build manifests in `.next/`, which also covers dynamic and auth-gated routes that have no prerendered HTML:
+
+- the client chunks of every segment on the route (layouts, `error.tsx`, the page), taken from `entryJSFiles` in `.next/server/app/<route>/page_client-reference-manifest.js`;
+- plus the framework and runtime chunks every route loads (`rootMainFiles` in `.next/build-manifest.json`);
+- minus the `noModule` polyfill chunk (`polyfillFiles`), which modern browsers skip.
+
+Each chunk is gzipped at level 9 and brotli-compressed at quality 11; 1 KB = 1024 bytes. For prerendered routes, the script also cross-checks the chunk list against the `<script src>` tags in the HTML. If the HTML doesn't load a chunk that the manifests list, the check fails, because the build output format has changed. Scripts that appear only in the HTML are added to the route's total. Chunks loaded later through `next/dynamic` or `import()` don't count as first-load JS, which matches how Next computes its own First Load JS. The script also fails when `.next/` is missing, when a manifest can't be read, or when a listed chunk is missing.
+
+Example output:
+
+```
+Route           Group  gzip KB  brotli KB  Budget KB  Status
+--------------  -----  -------  ---------  ---------  ------
+/               read     144.2      124.6       150*  ok
+/403            read     135.4      116.6        140  ok
+/login          read     133.8      115.2        140  ok
+
+Shared framework floor (7 chunks loaded by every route): 132.2 KB gzip / 113.8 KB brotli
+```
+
+The **shared framework floor** is the set of chunks common to every route (React, Next runtime, root layout). It shows how much of each budget is fixed cost.
+
+Budgets live in `scripts/bundle-budget.json`:
+
+| Group | Routes | Budget (gzip) |
+|---|---|---|
+| `read` | Every route not under an `(interactive)` route group: read-only `(app)` routes, `(auth)` and top-level pages | 140 KB |
+| `interactive` | Routes under `app/(app)/(interactive)/`, which load `QueryProvider` and `StoreProvider` | 200 KB |
+
+Per-route overrides go in `routes`, keyed by URL path, each with a `reason`. To run it locally: `pnpm build && pnpm check:budget`. Build with the same env as CI (see `ci.yml`), not `.env.local`.
 
 ---
 
@@ -160,11 +188,7 @@ Inspects staged files (`.ts`, `.tsx`, `.js`, `.jsx`) and blocks the commit if:
 
 **`check-architecture.sh`** — fires before every `git push`
 
-Compares changed files against `main` and checks only the files in the diff, so it is fast on incremental pushes. Blocks the push if:
-
-- Any changed file imports from a layer above itself (FSD layer violation)
-- Any changed file outside `src/shared/ui/` imports from `@org/ui-kit` (adapter violation)
-- Any slice under `entities/`, `features/`, or `widgets/` is missing `index.ts` (barrel check)
+Runs the same two checks as Architecture Guard, `pnpm check:arch` and `node scripts/check-barrels.mjs`, over the whole project. It blocks the push (exit `2`) if either one fails. The hook is optional local tooling: CI enforces the same rules whether or not you use Claude Code.
 
 **`security-reminder.sh`** — fires before every `Edit` or `Write` tool call
 
