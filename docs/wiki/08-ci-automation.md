@@ -248,7 +248,7 @@ To add a hook: add an entry to the appropriate `hooks` array. To disable a hook 
 - A `package.json` version bump
 - An updated `CHANGELOG.md` with entries grouped by commit type
 
-Merging the Release PR triggers a second run that creates a GitHub Release and git tag (`vX.Y.Z`). Template users who have enabled "Watch → Releases" on the repository receive a GitHub notification at this point.
+Merging the Release PR triggers a second run that creates a GitHub Release and git tag (`furio-kit-vX.Y.Z`, e.g. `furio-kit-v0.3.0`). Template users who have enabled "Watch → Releases" on the repository receive a GitHub notification at this point.
 
 ### Version bump rules
 
@@ -256,7 +256,9 @@ Merging the Release PR triggers a second run that creates a GitHub Release and g
 |---|---|
 | `security:`, `fix:`, `build:` | patch (0.1.0 → 0.1.1) |
 | `feat:` | minor (0.1.0 → 0.2.0) |
-| `feat!:` or `BREAKING CHANGE:` footer | major (0.1.0 → 1.0.0) |
+| `feat!:` or `BREAKING CHANGE:` footer | minor while below 1.0 (0.2.2 → 0.3.0), major from 1.0 on |
+
+`release-please-config.json` sets `bump-minor-pre-major: true`, so breaking changes don't jump a 0.x release straight to 1.0.0. They still appear under **⚠ BREAKING CHANGES** in the changelog. Remove the option when the template is ready for 1.0.
 | `refactor:`, `perf:`, `docs:` | visible in changelog — no version bump |
 | `chore:`, `test:`, `ci:`, `style:` | hidden — no release triggered |
 
@@ -286,7 +288,8 @@ When Dependabot opens a PR that is security-driven (an advisory, not a routine v
 `.github/copilot/instructions.md` provides project-specific context that GitHub Copilot uses when generating suggestions in this repository. It covers:
 
 - Default Server Component rendering and when to add `"use client"`
-- The `@/shared/ui` adapter rule (never import `@org/ui-kit` directly)
+- The `@/shared/ui` adapter rule (never import `#ui-kit` or `@org/ui-kit` directly) and semantic token classes
+- Route groups by JS cost (`(app)` vs `(app)/(interactive)`) and the per-route JS budget
 - `cn()` for className composition
 - FSD layer import order and cross-slice restrictions
 - Data fetching in Server Components vs. TanStack Query vs. Server Actions

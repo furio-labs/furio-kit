@@ -54,7 +54,9 @@ This project follows **Feature-Sliced Design (FSD)** with layers that can only i
 app → views → widgets → features → entities → shared
 ```
 
-`@org/ui-kit` components (Atoms/Molecules) are never imported directly. All consumption goes through adapters in `src/shared/ui/`.
+UI primitives (Atoms/Molecules) come from the UI kit behind the `#ui-kit` alias in `package.json`. They are never imported directly; all consumption goes through adapters in `src/shared/ui/`.
+
+The template targets low-bandwidth users, so CI enforces a per-route JavaScript budget (`pnpm check:budget`) and import-graph rules (`pnpm check:arch`). See [docs/wiki/10-performance.md](docs/wiki/10-performance.md).
 
 ---
 
@@ -62,15 +64,15 @@ app → views → widgets → features → entities → shared
 
 | Layer | What it contains | Can import from |
 |---|---|---|
-| `shared/ui` | Adapter wrappers around `@org/ui-kit` | `@org/ui-kit` only |
+| `shared/ui` | Adapters over the active UI kit, plus kit sources in `kit/<name>/` | `#ui-kit` (kit files may import `@org/ui-kit`) |
 | `shared/providers` | QueryProvider, StoreProvider | `shared/model` |
 | `shared/model` | Zustand store factories | — |
 | `shared/utils` | `cn()`, `formatDate()`, etc. | — |
 | `entities` | Domain types, API calls, domain UI | `shared` |
 | `features` | Single user interactions | `shared`, `entities` |
 | `widgets` | Self-contained page sections | `features`, `entities`, `shared` |
-| `views` | Full route screens | `widgets`, `features` |
-| `app` | Next.js layouts, pages, providers | `views`, `widgets` |
+| `views` | Full route screens | `widgets`, `features`, `entities`, `shared` |
+| `app` | Next.js layouts, route pages | any layer, through its `index.ts` |
 
 **Cross-slice imports at the same layer are forbidden.**
 
@@ -105,7 +107,7 @@ src/entities/product/
 
 **Rules:**
 - Always parse API responses through Zod (`parse()`, not `safeParse()`) — throw on invalid data
-- Never import `@org/ui-kit` directly in entity UI — use `@/shared/ui` adapters
+- Never import `#ui-kit` or `@org/ui-kit` in entity UI — use `@/shared/ui` adapters
 - Entity API functions live in `api/`, not in the component
 
 ---
@@ -123,7 +125,7 @@ This creates:
 
 ```
 src/features/add-to-cart/
-  ui/AddToCartForm.tsx          ← "use client" Client Component
+  ui/AddToCartForm.tsx          ← "use client" form using useActionState
   actions/add-to-cart-action.ts ← "use server" Server Action
   index.ts                      ← public API barrel
 ```
@@ -136,10 +138,21 @@ src/features/add-to-cart/
 4. Export only the public surface from `index.ts`
 
 **Rules:**
-- Features are typically Client Components (`"use client"`)
+- Add `"use client"` only when the component uses hooks (e.g. `useActionState` for pending state). A plain Server Component `<form action={serverAction}>` works before JavaScript loads, as `features/auth` does
 - Server Actions must validate all input with Zod before processing
 - Never store auth tokens in Client Components — use `HttpOnly` cookies set server-side
-- Feature UI imports from `@/shared/ui`, never from `@org/ui-kit` directly
+- Feature UI imports from `@/shared/ui`, never from `#ui-kit` or `@org/ui-kit` directly
+
+---
+
+## How to Add a New Route
+
+```bash
+pnpm generate route
+# Path (e.g. "reports/monthly"), then group: read or interactive
+```
+
+This creates `app/(app)/reports/monthly/page.tsx` (or under `app/(app)/(interactive)/`) plus `src/views/reports-monthly/`. Choose **read** unless the page uses Zustand (`useUIStore`, `usePermission`) or TanStack Query: only the `(interactive)` group mounts those providers, which add about 9 KB gzip. URLs are the same in both groups.
 
 ---
 
@@ -162,15 +175,20 @@ pnpm generate widget
 
 ## Adapter Pattern
 
-Every `@org/ui-kit` component must be wrapped in an adapter before use:
+The active UI kit is selected by one line in `package.json`:
+
+```json
+"imports": { "#ui-kit": "./src/shared/ui/kit/default/index.ts" }
+```
+
+Adapters in `src/shared/ui/` import the kit and map props. Scaffold one with `pnpm generate adapter`:
 
 ```tsx
-// src/shared/ui/Button/Button.tsx
-'use client'
-import { Button as OrgButton } from '@org/ui-kit'
+// src/shared/ui/Button/Button.tsx — no 'use client': it has no hooks of its own
+import { Button as KitButton } from '#ui-kit'
 
-export function Button({ children, variant = 'primary', ...rest }) {
-  return <OrgButton variant={variant} {...rest}>{children}</OrgButton>
+export function Button({ variant = 'primary', ...rest }: ButtonProps) {
+  return <KitButton variant={variant} {...rest} />
 }
 ```
 
@@ -178,8 +196,10 @@ Then import from the barrel:
 
 ```ts
 import { Button } from '@/shared/ui'  // ✅
-import { Button } from '@org/ui-kit'  // ❌ forbidden outside shared/ui
+import { Button } from '#ui-kit'      // ❌ forbidden outside shared/ui
 ```
+
+Add `'use client'` to an adapter only when it uses hooks, refs or browser APIs itself. Next ships every `'use client'` module a page imports, even through the barrel, so one needless directive costs every page. A kit must satisfy `src/shared/ui/kit/CONTRACT.md` and style itself with semantic token classes (`bg-primary`), never palette classes (`bg-blue-600`). See [docs/wiki/04-design-system.md](docs/wiki/04-design-system.md).
 
 ---
 
@@ -265,6 +285,8 @@ pnpm test          # run tests
 pnpm lint          # Biome lint
 pnpm format        # Biome format
 pnpm tsc --noEmit  # typecheck
-pnpm generate      # Plop slice generators
+pnpm generate      # Plop generators: route, adapter, entity, feature, widget
+pnpm check:arch    # import-graph architecture rules
+pnpm check:budget  # per-route JS budget (after pnpm build)
 pnpm audit         # security audit
 ```

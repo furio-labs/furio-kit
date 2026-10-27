@@ -1,6 +1,6 @@
 # Testing
 
-**TL;DR** — Tests are co-located with the code they test. Use Vitest with React Testing Library. Extract logic from Server Components into pure functions to keep it testable. Mock `fetch` and Server Actions; leave Zustand and `@org/ui-kit` adapters unmocked.
+**TL;DR** — Tests are co-located with the code they test. Use Vitest with React Testing Library. Extract logic from Server Components into pure functions to keep it testable. Mock `fetch` and Server Actions; leave Zustand and the `@/shared/ui` adapters (and the kit behind them) unmocked.
 
 ---
 
@@ -30,15 +30,15 @@ The naming convention is `<FileName>.test.tsx` for components and `<file-name>.t
 
 | Layer | What to test | What NOT to test |
 |---|---|---|
-| `shared/ui` adapters | Prop mapping, correct underlying component renders | `@org/ui-kit` internals |
+| `shared/ui` adapters | Prop mapping, correct underlying component renders | Package-mode kit internals |
 | `entities/api` | Zod parse behavior, error handling | Network calls (mock `fetch`) |
 | `entities/ui` | Rendered output, props → DOM | Styling details |
 | `features/ui` | User interactions, form submission, action calls | Server Action internals |
 | `widgets` | Composition — correct children rendered | Child component behavior |
 
-### On `@org/ui-kit`
+### On the UI kit
 
-Do not test `@org/ui-kit` components. They are tested by the design system package. Test only that your adapter passes the right props through and renders the expected output.
+Adapters import kit components through the `#ui-kit` alias, which Vitest resolves like the build does, so adapter tests render the real active kit. In package mode (`@org/ui-kit`), don't test the package's components; they're tested by the design system. Test only that your adapter passes the right props through and renders the expected output. In source mode, the kit lives in `src/shared/ui/kit/<name>/` and is your code, so test it like any other component.
 
 ---
 
@@ -165,7 +165,7 @@ describe('ProductCard', () => {
 
 ### Simulating user interaction
 
-Use `@testing-library/user-event` for realistic event simulation. Import it as `userEvent` and call `userEvent.setup()` at the start of each test.
+Use `@testing-library/user-event` for realistic event simulation. It is not installed by default; add it with `pnpm add -D @testing-library/user-event`. Import it as `userEvent` and call `userEvent.setup()` at the start of each test.
 
 ```tsx
 // src/features/add-to-cart/ui/AddToCartForm.test.tsx
@@ -259,9 +259,9 @@ render(
 )
 ```
 
-### Do not mock `@org/ui-kit`
+### Do not mock the kit
 
-Adapter tests verify that your adapter correctly maps props to the underlying component. If you mock `@org/ui-kit`, the test no longer checks the mapping — it only checks that you called a mock. Test the adapter's rendered output instead.
+Adapter tests verify that your adapter correctly maps props to the underlying component. If you mock `#ui-kit` or `@org/ui-kit`, the test no longer checks the mapping — it only checks that you called a mock. Test the adapter's rendered output instead.
 
 ```tsx
 // src/shared/ui/Button/Button.test.tsx
@@ -320,7 +320,7 @@ pnpm test src/entities/product/ui/ProductCard.test.tsx
 ```ts
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
@@ -328,10 +328,14 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    // Git worktrees are full checkouts; don't run their copies of the tests.
+    exclude: [...configDefaults.exclude, '.worktrees/**', '.claude/worktrees/**'],
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      'server-only': resolve(__dirname, './node_modules/server-only/empty.js'),
+      'client-only': resolve(__dirname, './node_modules/client-only/index.js'),
     },
   },
 })
@@ -343,7 +347,8 @@ export default defineConfig({
 | `environment: 'jsdom'` | Provides a browser-like DOM for React Testing Library |
 | `globals: true` | Makes `describe`, `it`, `expect`, and `vi` available without imports |
 | `setupFiles` | Runs `vitest.setup.ts` before every test file |
-| `resolve.alias` | Maps `@/` to `src/` so test imports match the source imports exactly |
+| `exclude` | Skips test copies inside git worktrees (`.worktrees/`, `.claude/worktrees/`) |
+| `resolve.alias` | Maps `@/` to `src/` so test imports match the source imports exactly. Also points `server-only` / `client-only` at their no-op modules: they throw outside the bundler's react-server condition, which Vitest doesn't set, so without the alias no server module (e.g. `@/shared/auth/server`) could be tested |
 
 ### `vitest.setup.ts`
 

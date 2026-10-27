@@ -1,6 +1,6 @@
 # furio-kit
 
-Enterprise React boilerplate by [FurioLabs](https://furiolabs.com). Built on Next.js 16 App Router with React Server Components, Feature-Sliced Design, and a pluggable `@org/ui-kit` design system adapter.
+Enterprise React boilerplate by [FurioLabs](https://furiolabs.com). Built on Next.js 16 App Router with React Server Components, Feature-Sliced Design, and a pluggable UI kit behind one `#ui-kit` alias. It targets low-bandwidth users: read-only pages ship only the Next.js framework floor (~132 KB gzip), and CI enforces a per-route JavaScript budget.
 
 **Author:** [Sandro A. Gomez Araya](https://github.com/sandrogomez)
 
@@ -32,7 +32,7 @@ rm -rf src/entities/user
 rm -rf src/features/auth    # if you're wiring a real auth provider instead
 ```
 
-Then update `src/views/home/ui/HomePage.tsx` and `app/page.tsx` to point to your own content.
+Then update `src/views/home/ui/HomePage.tsx` (rendered by `app/(app)/page.tsx`) to point to your own content. If you removed `features/auth`, also replace `app/(auth)/login/page.tsx`, which renders its `LoginForm`.
 
 Everything else (providers, adapters, auth scaffolding, generators) stays.
 
