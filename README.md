@@ -7,7 +7,7 @@ Enterprise React boilerplate by [FurioLabs](https://furiolabs.com). Built on Nex
 ## Bootstrap a new project
 
 ```bash
-npx degit furio-labs/furio-kit my-app
+pnpm dlx degit furio-labs/furio-kit my-app
 cd my-app
 cp .env.example .env.local
 pnpm install

@@ -16,7 +16,7 @@ ERRORS=""
 # Check 1: Lint staged files with Biome
 LINTABLE=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|jsx)$' || true)
 if [ -n "$LINTABLE" ]; then
-  LINT_OUTPUT=$(echo "$LINTABLE" | xargs npx biome lint 2>&1) || {
+  LINT_OUTPUT=$(echo "$LINTABLE" | xargs pnpm exec biome lint 2>&1) || {
     ERRORS="${ERRORS}Biome lint errors found in staged files:\n${LINT_OUTPUT}\n\n"
   }
 fi

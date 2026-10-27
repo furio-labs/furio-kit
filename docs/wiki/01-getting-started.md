@@ -18,6 +18,8 @@ node --version   # v22.x.x or higher
 pnpm --version   # 12.x.x or higher
 ```
 
+The repository is pnpm-only. `devEngines.packageManager` in `package.json` makes `npm install` fail before it writes a `package-lock.json` or `node_modules`.
+
 ---
 
 ## Bootstrap
@@ -29,7 +31,7 @@ Pick one of three paths.
 Copies the template without the git history, so you start with a clean slate.
 
 ```bash
-npx degit furio-labs/furio-kit my-app
+pnpm dlx degit furio-labs/furio-kit my-app
 cd my-app
 git init && git add -A && git commit -m "chore: init from furio-kit"
 ```
