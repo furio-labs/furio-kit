@@ -29,9 +29,12 @@ Cross-slice imports at the same layer are **forbidden**.
 
 ### Key Rules
 
-- **Server Components by default.** Only add `"use client"` when hooks or event handlers are needed.
-- **Adapter pattern.** Import UI from `@/shared/ui`, never from `@org/ui-kit` directly.
-- **Barrel exports.** Every slice (`entities/*`, `features/*`, `widgets/*`) must have an `index.ts`.
+- **Small JS by default.** Read-only routes go in `app/(app)/`; only routes that need Zustand or TanStack Query go in `app/(app)/(interactive)/`, whose layout mounts the providers. Scaffold with `pnpm generate route`. CI fails a route over its budget in `scripts/bundle-budget.json`.
+- **Server Components by default.** Only add `"use client"` when the component itself uses hooks, refs or browser APIs. Next ships every `"use client"` module a page imports (even through the `@/shared/ui` barrel), so a needless directive costs every page.
+- **Adapter pattern.** Import UI from `@/shared/ui`. Only `src/shared/ui/**` may import `#ui-kit`, `src/shared/ui/kit/**` or `@org/ui-kit`. A kit satisfies `src/shared/ui/kit/CONTRACT.md` and uses semantic token classes (`bg-primary`), never palette classes.
+- **Links.** Use `Link` from `@/shared/ui` (no prefetch on Save-Data / 2G), never `next/link` directly.
+- **Auth and env.** Server code imports `@/shared/auth/server`; client code `@/shared/auth/client`. The backend URL is server-only `API_URL`. `AUTH_PROVIDER` selects the auth adapter.
+- **Barrel exports.** Every slice (`entities/*`, `features/*`, `widgets/*`, `views/*`) must have an `index.ts`.
 - **Zod validation.** All `entities/*/api/` functions must parse responses through a Zod schema.
 - **State separation.** Zustand is for UI state only. Never store server-fetched data in Zustand.
 - **className composition.** Use `cn()` from `@/shared/utils`. Never use template literals for classNames.
@@ -46,7 +49,8 @@ The following checks run automatically in CI. Do not bypass or disable them. If 
 | Biome | `ci.yml` | `pnpm lint` - lint rules + import organization |
 | Vitest | `ci.yml` | `pnpm test` - all tests pass |
 | Build | `ci.yml` | `pnpm build` - production build succeeds |
-| Architecture Guard | `architecture-guard.yml` | FSD layers, adapter pattern, barrel exports, no deep imports, UI kit connection (opt-in) |
+| JS budget | `ci.yml` | `pnpm check:budget` - per-route first-load JS within `scripts/bundle-budget.json` |
+| Architecture Guard | `architecture-guard.yml` | `pnpm check:arch` (dependency-cruiser): FSD layers, cross-slice and deep imports, UI kit boundaries, server-only auth, cycles; plus barrel exports |
 | Vulnerability Audit | `audit.yml` | `pnpm audit --audit-level=high` |
 | CodeQL | `codeql.yml` | Security analysis for JS/TS |
 | Dependabot | `dependabot.yml` | Weekly dependency updates |

@@ -142,7 +142,7 @@ Budgets live in `scripts/bundle-budget.json`:
 | Group | Routes | Budget (gzip) |
 |---|---|---|
 | `read` | Every route not under an `(interactive)` route group: read-only `(app)` routes, `(auth)` and top-level pages | 140 KB |
-| `interactive` | Routes under `app/(app)/(interactive)/`, which load `QueryProvider` and `StoreProvider` | 200 KB |
+| `interactive` | Routes under `app/(app)/(interactive)/`, which load `QueryProvider` and `StoreProvider` | 180 KB |
 
 Per-route overrides go in `routes`, keyed by URL path, each with a `reason`. To run it locally: `pnpm build && pnpm check:budget`. Build with the same env as CI (see `ci.yml`), not `.env.local`.
 

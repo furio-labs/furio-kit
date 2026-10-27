@@ -1,6 +1,6 @@
 # furio-kit Wiki
 
-furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a production-ready starting point built on Next.js 16+ App Router with React Server Components as the default rendering model, Feature-Sliced Design (FSD) for enforced layer boundaries, and a mandatory adapter pattern that decouples your application from any specific design system (`@org/ui-kit`). Fork it, drop in your organization's UI kit, and ship features instead of scaffolding.
+furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a production-ready starting point built on Next.js 16+ App Router with React Server Components as the default rendering model, Feature-Sliced Design (FSD) for enforced layer boundaries, and a mandatory adapter pattern that decouples your application from any specific design system (`@org/ui-kit`). Fork it, drop in your organization's UI kit, and ship features instead of scaffolding. It targets low-bandwidth users: read-only routes ship only the framework floor, and CI enforces a per-route JS budget.
 
 ## Tech Stack
 
@@ -17,7 +17,8 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 | Zustand | v5 | Client UI state (SSR-safe factory pattern) |
 | Zod | v4 | Runtime schema validation at system boundaries |
 | Vitest | v5 | Unit and integration tests |
-| `@org/ui-kit` | org-supplied | External design system (Atoms + Molecules) |
+| `#ui-kit` | org-supplied | UI kit alias: source kit in `src/shared/ui/kit/` or a re-exported `@org/ui-kit` |
+| dependency-cruiser | 18 | Import-graph architecture checks |
 
 ## Guides
 
@@ -32,6 +33,7 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 | 7 | [Testing](./07-testing.md) | What to test per layer, co-location, RTL patterns, Vitest config |
 | 8 | [CI & Automation](./08-ci-automation.md) | GitHub Actions workflows, architecture guard, Dependabot, Claude Code hooks |
 | 9 | [Extending the Template](./09-extending.md) | Adding generators, workflows, hooks, upgrading majors, upstream sync |
+| 10 | [Performance](./10-performance.md) | JS floor, route groups, bundle budget, prefetch, forms before JS, caching, service workers, browser targets |
 
 ## Where to Find What
 
@@ -46,6 +48,7 @@ furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a prod
 | How do I write tests for Server Components or adapters? | [Testing](./07-testing.md) |
 | How does the CI pipeline work? What does the architecture guard check? | [CI & Automation](./08-ci-automation.md) |
 | How do I add a Plop generator or new GitHub Actions workflow? | [Extending the Template](./09-extending.md) |
+| Why is every page ~132 KB and how do I keep my routes small? | [Performance](./10-performance.md) |
 | What are the full technical rules for AI assistants (Claude Code)? | [`CLAUDE.md`](../../CLAUDE.md) |
 | How do all AI assistants behave in this repo? | [`AGENTS.md`](../../AGENTS.md) |
 | How do I contribute a PR, use worktrees, or run the generators? | [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |

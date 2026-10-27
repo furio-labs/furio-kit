@@ -106,20 +106,18 @@ Next's `<Link>` prefetches routes as links enter the viewport. On a fast link th
 navigation feel instant. On a slow or metered link, it spends the user's bandwidth on pages
 they may never open.
 
-Use the `Link` adapter from `@/shared/ui`, not `next/link` directly. It turns prefetch
-**off** unless you opt in, so a page with many links doesn't download routes nobody opens.
-Opt in on the few links users almost always follow:
+Use the `Link` adapter from `@/shared/ui`, not `next/link` directly. It turns off prefetch
+when the browser reports **Save-Data** or a **2g** connection type, and costs about 0.4 KB gzip.
 
 ```tsx
 import { Link } from '@/shared/ui'
 
-<Link href="/orders">Orders</Link>                 {/* no prefetch */}
-<Link href="/dashboard" prefetch="auto">Home</Link> {/* Next's default behavior */}
+<Link href="/orders">Orders</Link>
 ```
 
-The adapter is a Server Component on purpose. A client version that read
-`navigator.connection` (Save-Data / 2G) cost about 9 KB gzip on every page that rendered it,
-more than the prefetching it avoided, and only Chromium implements that API.
+The check uses `navigator.connection` (the Network Information API). Only Chromium-based
+browsers implement it. In Firefox and Safari, prefetch stays at Next's default. On pages with
+many links, pass `prefetch={false}` on links users rarely follow.
 
 ### Client components cost every page that imports them
 

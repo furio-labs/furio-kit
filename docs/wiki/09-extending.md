@@ -137,7 +137,7 @@ GitHub Actions evaluates `${{ }}` expressions before the shell sees the command.
 {
   "groups": {
     "read": { "gzipKb": 140 },
-    "interactive": { "gzipKb": 200 }
+    "interactive": { "gzipKb": 180 }
   },
   "routes": {
     "/reports": {

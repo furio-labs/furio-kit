@@ -152,9 +152,7 @@ App code outside the kit should also use semantic classes, so a re-brand reaches
 
 ## Link: data-saving prefetch
 
-`Link` from `@/shared/ui` wraps `next/link`. By default `next/link` prefetches every link that scrolls into view, which spends data the user didn't ask for on slow or metered connections. The adapter turns prefetch off unless you pass `prefetch` (`true` or `'auto'`); opt in on the few links users almost always follow, such as primary navigation.
-
-It is a Server Component on purpose. A `'use client'` version that switched prefetch off only on Save-Data or 2G connections measured about 9 KB gzip extra on every page that rendered it, more than the prefetching it avoided.
+`Link` from `@/shared/ui` wraps `next/link`. By default `next/link` prefetches every link that scrolls into view, which spends data the user didn't ask for on slow or metered connections. The adapter turns prefetch off when the browser reports Save-Data (`navigator.connection.saveData`) or a `slow-2g`/`2g` connection. Otherwise it passes your `prefetch` prop through unchanged. It is a small Client Component: measured at about 0.4 KB gzip per page.
 
 ```tsx
 import { Link } from '@/shared/ui'
