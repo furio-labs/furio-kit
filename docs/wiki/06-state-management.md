@@ -15,7 +15,21 @@
 | Global UI state | Zustand | Sidebar open, theme, modal visibility |
 | Form state | Native `<form>` + Server Actions | Login form, settings form |
 
-When in doubt, reach for the tool furthest up this list that fits. Async Server Components are the default and preferred approach — they require no client-side JavaScript, no caching configuration, and no extra abstraction.
+When in doubt, reach for the tool furthest up this list that fits. Async Server Components are the default and preferred approach — they add no client-side JavaScript of their own, no caching configuration, and no extra abstraction.
+
+### Where the providers live
+
+`StoreProvider` (Zustand) and `QueryProvider` (TanStack Query) are mounted **only** in `app/(app)/(interactive)/layout.tsx`. The `(app)` shell and the `(auth)` pages have no providers, so read-only routes do not ship their code ([ADR-009](../adr/009-framework-and-js-floor.md)).
+
+| Route location | `useUIStore` / `usePermission` | TanStack Query hooks |
+|---|---|---|
+| `app/(app)/(interactive)/…` | Work | Work |
+| `app/(app)/…` (read-only) | Throw | Throw (no `QueryClient`) |
+| `app/(auth)/…` | Throw | Throw (no `QueryClient`) |
+
+`useUIStore` throws `useUIStore must be used within StoreProvider` when no provider is above it. `usePermission` calls `useUIStore`, so it throws in the same places. If you see that error, move the route into `(interactive)` (the URL does not change), or remove the client state from the page.
+
+Async Server Components, Server Actions and native forms need no provider. They work in every group.
 
 ---
 
@@ -58,7 +72,7 @@ const UsersSchema = z.array(UserSchema)
 export type User = z.infer<typeof UserSchema>
 
 export async function getUsers(): Promise<User[]> {
-  const res = await fetch('/api/users', { next: { revalidate: 60 } })
+  const res = await fetch(`${process.env.API_URL}/users`, { next: { revalidate: 60 } })
   const data = await res.json()
   return UsersSchema.parse(data)
 }
@@ -215,7 +229,7 @@ export function UserListClient() {
 }
 ```
 
-`QueryProvider` is already mounted in `app/(app)/layout.tsx` (scoped to authenticated routes) — no additional setup is needed.
+`QueryProvider` is already mounted in `app/(app)/(interactive)/layout.tsx`, so no extra setup is needed for routes in that group. Put routes that use TanStack Query under `(interactive)`. In the read-only `(app)` group, `useQuery` throws because there is no `QueryClient`.
 
 ---
 
@@ -270,28 +284,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
 ### Reading state
 
-Use `useUIStore` from `@/shared/providers` — never import the store or context directly from `shared/model`:
+Use `useUIStore` from `@/shared/providers` — never import the store or context directly from `shared/model`. The component must render under a route in `app/(app)/(interactive)/`:
 
 ```tsx
-// src/widgets/header/ui/Header.tsx
+// src/features/sidebar-toggle/ui/SidebarToggle.tsx
 'use client'
 
 import { useUIStore } from '@/shared/providers'
 import { Button } from '@/shared/ui'
 
-export function Header() {
+export function SidebarToggle() {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen)
   const toggleSidebar = useUIStore((s) => s.toggleSidebar)
 
   return (
-    <header>
-      <Button onClick={toggleSidebar}>
-        {sidebarOpen ? 'Close' : 'Open'} sidebar
-      </Button>
-    </header>
+    <Button onClick={toggleSidebar}>
+      {sidebarOpen ? 'Close' : 'Open'} sidebar
+    </Button>
   )
 }
 ```
+
+Do not call `useUIStore` from the `Header` widget or anything else rendered by `app/(app)/layout.tsx`. That shell sits above `(interactive)` and has no `StoreProvider`.
 
 Select only the slice of state each component needs. Selecting the whole store object causes unnecessary re-renders.
 
@@ -352,6 +366,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 ```
 
 Consume via a `useCartStore` hook that reads from the context — the same pattern as `useUIStore` in `shared/providers`.
+
+A slice provider is independent of `StoreProvider`, so it works in any route group. It still ships Zustand to that route, so check `pnpm check:budget` if you use one in a read-only route.
 
 ### What stays in the global store
 
