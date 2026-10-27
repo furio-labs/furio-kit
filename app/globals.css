@@ -13,7 +13,7 @@
  * Tailwind emitting a palette variable that nothing else uses.
  */
 @theme static {
-  --color-background: #fff; /* page */
+  --color-background: oklch(98.5% 0.002 247.839); /* gray-50 */
   --color-foreground: oklch(21% 0.034 264.665); /* gray-900 */
   --color-surface: #fff; /* cards, header */
   --color-border: oklch(92.8% 0.006 264.531); /* gray-200 */

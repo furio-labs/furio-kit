@@ -1,6 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    // Git worktrees are full checkouts; don't run their copies of the tests.
+    exclude: [...configDefaults.exclude, '.worktrees/**', '.claude/worktrees/**'],
   },
   resolve: {
     alias: {

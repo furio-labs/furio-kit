@@ -185,17 +185,7 @@ import { Button } from '@org/ui-kit'  // ❌ forbidden outside shared/ui
 
 ## Auth Adapters
 
-The active auth adapter lives in `src/shared/auth/index.ts`. To switch providers:
-
-```ts
-// Before
-import { mockAdapter } from './adapters/mock'
-export const authAdapter = mockAdapter
-
-// After (e.g. Auth0)
-import { auth0Adapter } from './adapters/auth0'
-export const authAdapter = auth0Adapter
-```
+The `AUTH_PROVIDER` env var (`mock` | `auth0` | `ping`) selects the adapter in `src/shared/auth/server.ts`. To switch providers, install the provider's SDK, then set `AUTH_PROVIDER` and its env vars.
 
 See the adapter files for required env vars and install instructions.
 

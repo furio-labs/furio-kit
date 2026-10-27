@@ -37,3 +37,4 @@ coverage/
 
 # Local Claude Code state
 .claude/.headroom_wrap_marker.json
+.claude/worktrees/

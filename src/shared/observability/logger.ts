@@ -11,7 +11,7 @@ function log(level: LogLevel, message: string, context: LogContext = {}): void {
     console[level](`[${level.toUpperCase()}] ${message}`, Object.keys(context).length ? context : '')
     return
   }
-  console[level](JSON.stringify({ level, message, ...context, timestamp: new Date().toISOString() }))
+  console[level](JSON.stringify({ ...context, level, message, timestamp: new Date().toISOString() }))
 }
 
 export const logger = {

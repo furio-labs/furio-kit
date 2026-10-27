@@ -25,10 +25,10 @@ export async function LoginForm({ searchParams }: LoginFormProps) {
 
   return (
     <form action={loginAction} className="mx-auto mt-16 w-full max-w-sm space-y-4 px-4">
-      <h1 className="text-2xl font-bold text-gray-900">Sign in</h1>
+      <h1 className="text-2xl font-bold text-foreground">Sign in</h1>
 
       {error && (
-        <p role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-control border border-danger px-3 py-2 text-sm text-danger">
           {error}
         </p>
       )}
@@ -36,7 +36,7 @@ export async function LoginForm({ searchParams }: LoginFormProps) {
       {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 
       <div className="space-y-1">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="block text-sm font-medium text-foreground">
           Email
         </label>
         <input
@@ -45,12 +45,12 @@ export async function LoginForm({ searchParams }: LoginFormProps) {
           type="email"
           autoComplete="email"
           required
-          className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="w-full rounded-control border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="block text-sm font-medium text-foreground">
           Password
         </label>
         <input
@@ -59,7 +59,7 @@ export async function LoginForm({ searchParams }: LoginFormProps) {
           type="password"
           autoComplete="current-password"
           required
-          className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="w-full rounded-control border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
       </div>
 
