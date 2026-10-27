@@ -1,6 +1,6 @@
 # furio-kit Wiki
 
-furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a production-ready starting point built on Next.js 16+ App Router with React Server Components as the default rendering model, Feature-Sliced Design (FSD) for enforced layer boundaries, and a mandatory adapter pattern that decouples your application from any specific design system (`@org/ui-kit`). Fork it, drop in your organization's UI kit, and ship features instead of scaffolding. It targets low-bandwidth users: read-only routes ship only the framework floor, and CI enforces a per-route JS budget.
+furio-kit is an enterprise React boilerplate by FurioLabs. It gives teams a production-ready starting point built on Next.js 16+ App Router with React Server Components as the default rendering model, Feature-Sliced Design (FSD) for enforced layer boundaries, and a mandatory adapter pattern that decouples your application from any specific design system: one `#ui-kit` import alias selects the kit. Fork it, drop in your organization's UI kit, and ship features instead of scaffolding. It targets low-bandwidth users: read-only routes ship only the framework floor, and CI enforces a per-route JS budget.
 
 ## Tech Stack
 

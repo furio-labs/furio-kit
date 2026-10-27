@@ -201,9 +201,9 @@ Each FSD layer has a typical rendering posture. These are defaults, not rigid ru
 
 | Layer | Default rendering | Rationale |
 |---|---|---|
-| `shared/ui` adapters | `"use client"` for interactive primitives; Server Component for presentational ones | Wraps kit components imported from `#ui-kit` (a source kit in `src/shared/ui/kit/default/` or a re-export of `@org/ui-kit`), assumed to be Client Components unless stated otherwise |
+| `shared/ui` adapters | Server Components unless the adapter itself uses hooks, refs or browser APIs | Wraps kit components imported from `#ui-kit` (a source kit in `src/shared/ui/kit/<name>/` or a re-export of `@org/ui-kit`). Next ships every `"use client"` module a page imports, even through the `@/shared/ui` barrel, so a needless directive costs every page that imports the barrel |
 | `entities/*/ui` | Server Components | Domain UI typically reads and displays data; async Server Components own their own fetch and participate in Suspense streaming |
-| `features/*/ui` | Client Components | User interactions (form state, click handlers) nearly always require hooks |
+| `features/*/ui` | Client Components when they need hooks; otherwise a Server Component `<form action={serverAction}>` | A server-rendered form works before JavaScript loads on slow links (see `features/auth`); add `"use client"` for pending state or instant validation |
 | `widgets/*/ui` | Server Components | Page sections orchestrate layout and pass data as props to inner Client Components |
 | `views/` | Server Components | Full screens compose widgets; own `<Suspense>` boundaries for streaming |
 | `app/` | Server Components | Layouts, route-group providers (only under `(interactive)`), routing — orchestration only |

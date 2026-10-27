@@ -261,9 +261,22 @@ The knowledge graph is the one addition that did not survive contact with practi
 
 The episode sharpens the argument rather than weakening it. Security enforcement and provider scoping are *structural* — they live in code and CI, they hold regardless of any developer's local environment, and they impose nothing on adopters beyond the source itself. The knowledge graph was *instrumental*, and the architecture's mistake was not adopting it but **mandating** it. A tool a repository requires stops being a private developer preference and becomes a term the repository imposes on everyone downstream — inheriting that tool's licensing constraints along with its capabilities. Instrumental aids belong in an architecture; they belong there as options, and whatever an instruction file makes compulsory must be licensed as permissively as the project itself.
 
+### Postscript: Bundle Size Becomes an Enforced Constraint (v0.3.0, 2026-10-27)
+
+A later review measured what server-first rendering actually delivers. On the Next.js App Router, every page ships a framework floor of about 132 KB gzip of JavaScript, even a page with no client components. Server Components keep application code off the client, but they do not lower that floor. Before v0.3.0, the template also added about 9 KB of client-state libraries to every authenticated page, whether or not it used them.
+
+v0.3.0 applies this paper's central argument to bundle size: a goal that only lives in documentation degrades, so it became a structural constraint.
+
+- **Route groups encode JavaScript cost.** Read-only routes live in a provider-free `(app)` group; only `(app)/(interactive)` mounts Zustand and TanStack Query. Where a route lives decides what it ships.
+- **CI enforces a per-route budget** (`pnpm check:budget`). During the same release it caught a regression no review had noticed: a `'use client'` adapter pulled about 9 KB onto every page that imported the UI barrel.
+- **The design-system boundary moved to build time.** One `#ui-kit` import alias selects the kit, whether it is source in the repository (including AI-generated kits) or an organization package. A missing export fails the build instead of a runtime check.
+- **Layer rules moved from text matching to an import graph** (dependency-cruiser), closing gaps for relative, dynamic and re-exported imports.
+
+The framework floor itself is accepted, not engineered away (ADR-009). For applications that are mostly read-only content, an islands architecture that ships no JavaScript on static pages is the better fit, and this paper's strategy should be weighed against it.
+
 ---
 
-*This document describes the architectural strategy as implemented through revision 2026-05-23. Decisions and tradeoffs reflect the constraints and priorities at the time of design. Sections 5–8 document additions implemented in the 2026-05-22 architectural review (ADRs 001–007).*
+*This document describes the architectural strategy as implemented through revision 2026-05-23, with postscripts for 2026-07-25 (§8) and v0.3.0 (§11). Decisions and tradeoffs reflect the constraints and priorities at the time of design. Sections 5–8 document additions implemented in the 2026-05-22 architectural review (ADRs 001–007).*
 
 ---
 

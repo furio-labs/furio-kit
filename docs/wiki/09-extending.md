@@ -35,53 +35,17 @@ plop.setGenerator('generator-name', {
 
 Plop provides built-in case helpers: `{{pascalCase name}}`, `{{camelCase name}}`, `{{kebabCase name}}`. The `plopfile.mjs` also registers `{{upperFirst name}}` as a custom helper.
 
-### Example: a "page" generator
+### Example: the built-in `route` generator
 
-The built-in generators operate at a single FSD layer. A page generator is more useful because it spans two layers at once: it creates a `views/` screen and wires it to a Next.js `app/` route.
+Most generators work at a single FSD layer. `route` spans two: it creates a `views/` screen and the Next.js `app/` page that delegates to it, in the route group the user picks. Read it in `plopfile.mjs` as the model for any multi-layer generator:
 
-Add this generator to `plopfile.mjs` after the existing ones:
+- **Prompts validate before writing.** The path must be kebab-case segments, and it must not already exist in either route group, because Next fails on duplicate routes across groups.
+- **One prompt picks the destination.** A `ROUTE_GROUPS` map turns `read` / `interactive` into `app/(app)/` or `app/(app)/(interactive)/`, so the JS-cost decision is made once, at scaffold time.
+- **Templates live beside their generator** in `plop-templates/route/`, one per output file.
 
-```js
-plop.setGenerator('page', {
-  description: 'Create a view + app route together',
-  prompts: [
-    {
-      type: 'input',
-      name: 'name',
-      message: 'Page name (kebab-case, e.g. user-profile):',
-      validate: (v) => /^[a-z][a-z0-9-]*$/.test(v) || 'Use kebab-case (e.g. user-profile)',
-    },
-  ],
-  actions: [
-    // The view component
-    {
-      type: 'add',
-      path: 'src/views/{{name}}/ui/{{pascalCase name}}View.tsx',
-      templateFile: 'plop-templates/page/ui/View.tsx.hbs',
-    },
-    // The view barrel
-    {
-      type: 'add',
-      path: 'src/views/{{name}}/index.ts',
-      templateFile: 'plop-templates/page/index.ts.hbs',
-    },
-    // The Next.js route
-    {
-      type: 'add',
-      path: 'app/{{name}}/page.tsx',
-      templateFile: 'plop-templates/page/app/page.tsx.hbs',
-    },
-  ],
-})
-```
+The `adapter` generator follows the same pattern for `src/shared/ui/<Name>/`: it appends the export to the `src/shared/ui/index.ts` barrel and reminds you to add the component to the active kit.
 
-Then create the Handlebars templates under `plop-templates/page/`. Study the existing templates in `plop-templates/entity/`, `plop-templates/feature/`, and `plop-templates/widget/` to understand the conventions — they follow the same RSC-by-default pattern documented in the architecture guide.
-
-Run the generator with:
-
-```bash
-pnpm plop page
-```
+Run either one non-interactively in scripts or CI: `pnpm exec plop route reports/monthly read`.
 
 ---
 
@@ -243,7 +207,7 @@ fi
 
 # Example: warn when editing files in the shared/ui adapter layer
 if [[ "$FILE_PATH" == */shared/ui/* ]]; then
-  echo "REMINDER: Adapter files should wrap @org/ui-kit components only."
+  echo "REMINDER: Adapters wrap #ui-kit components and map props only."
   echo "Do not implement business logic here."
   exit 0
 fi

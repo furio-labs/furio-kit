@@ -338,7 +338,7 @@ function ProductSectionSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="h-80 animate-pulse rounded-lg bg-gray-200"
+          className="h-80 animate-pulse rounded-surface bg-muted"
           aria-hidden
         />
       ))}
@@ -426,7 +426,7 @@ src/entities/product/ui/
 
 ### `src/entities/product/ui/ProductCard.test.tsx`
 
-Test that the component renders the correct content from the product prop. Do not test `@org/ui-kit` internals — that is the design system package's responsibility.
+Test that the component renders the correct content from the product prop. Do not test the kit's internals; adapters and the kit are tested in `src/shared/ui/`.
 
 ```tsx
 import { render, screen } from '@testing-library/react'

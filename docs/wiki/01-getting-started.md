@@ -131,9 +131,9 @@ rm -rf src/features/auth
 Then update the screens that referenced them:
 
 - `src/views/home/ui/HomePage.tsx` — remove the `UserList` import and replace with your own content.
-- `app/page.tsx` — update if the top-level route delegate needs to change.
+- `app/(auth)/login/page.tsx` — renders `LoginForm` from `features/auth`; replace it if you deleted that slice.
 
-> Tip: `pnpm lint` will surface any broken imports after the deletion.
+> Tip: `pnpm exec tsc --noEmit` and `pnpm check:arch` surface any broken imports after the deletion.
 
 ---
 
@@ -141,14 +141,18 @@ Then update the screens that referenced them:
 
 ```
 app/                  Next.js App Router — layouts, route pages, error/loading boundaries
+  (app)/              Authenticated read-only routes (no client state providers)
+    (interactive)/    Routes that need Zustand / TanStack Query (providers mounted here)
+  (auth)/             Login, a form that works before JavaScript loads
 src/
-  shared/             UI adapters, providers, Zustand store, utils, types, constants
+  shared/             UI adapters, UI kit (ui/kit/), providers, auth, env, utils, types
   entities/           Business domain models — types, API calls, domain UI (Organisms)
   features/           User interactions — forms, Server Actions, client mutations
   widgets/            Self-contained page sections — Header, Sidebar, Dashboard panels
   views/              Full route screens composed from widgets and features
 .github/              CI workflows, Dependabot config, Copilot instructions
-.claude/              Claude Code hooks and settings
+scripts/              JS budget check (bundle-budget.json) and barrel check
+.claude/              Optional Claude Code hooks and settings
 docs/wiki/            This wiki
 ```
 
@@ -167,7 +171,9 @@ Imports flow **downward only**: `app` → `views` → `widgets` → `features` �
 | `pnpm format` | Run Biome formatter and write changes |
 | `pnpm test` | Run the Vitest test suite once |
 | `pnpm test:watch` | Run Vitest in interactive watch mode |
-| `pnpm generate` | Run the Plop code generator to scaffold new slices |
+| `pnpm generate` | Scaffold a route, adapter, entity, feature or widget (Plop) |
+| `pnpm check:arch` | Check import boundaries with dependency-cruiser |
+| `pnpm check:budget` | Check each route's first-load JS against its budget (after `pnpm build`) |
 | `pnpm audit` | Check npm dependencies for known vulnerabilities |
 
 ---

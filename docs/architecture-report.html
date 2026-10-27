@@ -305,6 +305,9 @@
       <strong>Branch:</strong> <code>chore/deps-2026-05-13</code> &nbsp;·&nbsp;
       <strong>Status:</strong> <span class="badge badge-done">Production Ready</span>
     </p>
+    <div class="callout warn" style="margin-top:16px">
+      <strong>Snapshot from 2026-05-23.</strong> v0.3.0 (2026-10-27) changed parts of what this report describes: the UI kit is now selected by the <code>#ui-kit</code> import alias instead of <code>@org/ui-kit</code> plus <code>NEXT_PUBLIC_UI_KIT_CONNECTED</code>, providers mount only under <code>app/(app)/(interactive)/</code>, architecture checks run on dependency-cruiser, and CI enforces a per-route JS budget. See ADR-009, ADR-010 and <code>docs/wiki/10-performance.md</code> for the current design.
+    </div>
     <p style="margin-top:16px">
       furio-kit is an enterprise React boilerplate built for FurioLabs-derived frontends.
       It enforces server-first rendering, explicit layer boundaries, mandatory anti-corruption adapters, and
