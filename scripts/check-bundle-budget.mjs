@@ -131,7 +131,7 @@ function htmlScripts(route) {
   if (!existsSync(file)) return undefined;
   const html = readFileSync(file, 'utf8');
   const scripts = new Set();
-  for (const match of html.matchAll(/<script\b([^>]*)>/g)) {
+  for (const match of html.matchAll(/<script\b([^>]*)>/gi)) {
     const attrs = match[1];
     // Match anywhere in src so basePath (/app/_next/…) and assetPrefix
     // (https://cdn…/_next/…) still line up with the manifest paths.
