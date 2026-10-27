@@ -1,309 +1,243 @@
 # Design System Integration
 
-Connect your organization's design system to furio-kit in three steps: install `@your-org/ui-kit`, update the import in each adapter, and add any new adapters you need. Everything else in the app continues to import from `@/shared/ui` — nothing else changes.
+furio-kit doesn't care where your components come from. They can be an npm package your organization publishes, or source files a tool like shadcn/ui, v0 or an AI assistant generated into the repo. Either way you plug them in by changing **one line** in `package.json`. Features, entities, widgets and views keep importing from `@/shared/ui` and never notice.
 
 ---
 
-## How the adapter pattern works
-
-`@org/ui-kit` is never imported directly from features, entities, widgets, or views. Every component goes through a thin adapter in `src/shared/ui/` first.
+## How it fits together
 
 ```
-@org/ui-kit
+package.json  "imports": { "#ui-kit": "<active kit entry>" }
     |
     v
-src/shared/ui/Button/Button.tsx   (adapter)
-src/shared/ui/Card/Card.tsx       (adapter)
+src/shared/ui/kit/<name>/index.ts       the kit: Button, Card, ... (styling lives here)
     |
     v
-features / entities / widgets / views
+src/shared/ui/Button/Button.tsx         adapters: import from '#ui-kit', map props
+src/shared/ui/Card/Card.tsx
+src/shared/ui/Link/Link.tsx             (wraps next/link, not the kit)
+    |
+    v
+features / entities / widgets / views   import { Button } from '@/shared/ui'
 ```
 
-Adapters serve two purposes:
+Three pieces, each with one job:
 
-1. **Decoupling** — If the org switches design systems (Material UI to a custom library, for example), only the adapters change. The rest of the codebase is untouched.
-2. **API normalization** — Each adapter defines its own `Props` interface. The rest of the app depends on that interface, not on whatever shape `@org/ui-kit` happens to export.
+| Piece | Where | Job |
+|---|---|---|
+| **Kit** | `src/shared/ui/kit/<name>/` | The actual components and their styling |
+| **Alias** | `package.json` → `"imports"` → `#ui-kit` | Picks the active kit at build time |
+| **Adapters** | `src/shared/ui/<Name>/` | The stable API the app uses (`ButtonProps`, `CardProps`…); maps it to the kit |
+
+The kit must satisfy [`src/shared/ui/kit/CONTRACT.md`](../../src/shared/ui/kit/CONTRACT.md): the exports and props each adapter expects, and the semantic tokens. Hand that file to a person or an AI design tool as the spec for a compatible kit.
+
+`#ui-kit` is a standard Node.js [subpath import](https://nodejs.org/api/packages.html#subpath-imports). TypeScript (`moduleResolution: bundler`), Turbopack and Vitest all resolve it from `package.json` with no extra config.
 
 ---
 
-## Connecting your design system
+## The default kit
 
-### Step 1: Set the connection flag
+furio-kit ships a placeholder kit in `src/shared/ui/kit/default/`, and the alias points at it:
 
-furio-kit ships with **fail-loud adapter stubs**. When `NEXT_PUBLIC_UI_KIT_CONNECTED=true`, adapter components throw at render time with a clear error message if they have not been wired to a real `@org/ui-kit` import. This makes it impossible to accidentally ship stub components in a connected environment.
-
-Set the flag in your deployment environment (`.env.local` for development, your CI/CD config for production):
-
-```bash
-# .env.local
-NEXT_PUBLIC_UI_KIT_CONNECTED=true
+```json
+"imports": {
+  "#ui-kit": "./src/shared/ui/kit/default/index.ts"
+}
 ```
 
-Leave it unset or `false` while developing before the design system is available — the stubs render a Tailwind fallback instead of throwing.
+It is plain Tailwind built on the semantic tokens (see [Tokens](#tokens)). You can ship with it, restyle it, or replace it.
 
-### Step 2: Install the package
+---
 
-```bash
-pnpm add @your-org/ui-kit
-```
+## Mode 1: source kit (shadcn/ui, v0, AI-generated)
 
-### Step 3: Wire the adapters
+Use this mode when the components live as source in your repo.
 
-Then open each adapter file and replace the placeholder implementation with a real import:
+1. Generate or copy the components into a new folder, e.g. `src/shared/ui/kit/acme/`.
+2. Add `src/shared/ui/kit/acme/index.ts` that exports the names in `CONTRACT.md`. If a component uses different names or props, re-export or wrap it here:
 
-```ts
-// Before (placeholder)
+   ```ts
+   // src/shared/ui/kit/acme/index.ts
+   export { Button } from './button'
+   export { Card } from './card'
+   ```
+
+3. Point the alias at it:
+
+   ```json
+   "imports": { "#ui-kit": "./src/shared/ui/kit/acme/index.ts" }
+   ```
+
+4. Run `pnpm exec tsc --noEmit && pnpm build`. A missing export or wrong prop type fails here, not at runtime.
+
+You can keep `kit/default/` around for comparison or delete it once you have switched.
+
+## Mode 2: package kit (`@org/ui-kit` from npm)
+
+Use this mode when your organization publishes its design system as a package.
+
+1. `pnpm add @org/ui-kit`
+2. Create `src/shared/ui/kit/org/index.ts`, re-exporting the contract names:
+
+   ```ts
+   // src/shared/ui/kit/org/index.ts
+   export { Button, Card } from '@org/ui-kit'
+   // or, when names differ:
+   // export { PrimaryButton as Button, Panel as Card } from '@org/ui-kit'
+   ```
+
+3. Point the alias at it:
+
+   ```json
+   "imports": { "#ui-kit": "./src/shared/ui/kit/org/index.ts" }
+   ```
+
+4. If the package ships a stylesheet, import it in `app/globals.css` and map its variables to the semantic tokens (see below).
+5. Run `pnpm exec tsc --noEmit && pnpm build`.
+
+When the package's props differ more than a rename can fix (say it takes `intent` where the contract says `variant`), map them in the adapter. That is the one place where the kit's API meets the app's:
+
+```tsx
 // src/shared/ui/Button/Button.tsx
-// ... manual button implementation
+'use client'
 
-// After (connected)
-import { Button as OrgButton } from '@your-org/ui-kit'
+import { Button as KitButton } from '#ui-kit'
+
+export function Button({ variant = 'primary', ...rest }: ButtonProps) {
+  return <KitButton intent={variant === 'ghost' ? 'subtle' : variant} {...rest} />
+}
 ```
 
-Map your adapter's `Props` interface to whatever `OrgButton` expects. The consumers of `@/shared/ui` never see the difference.
+Only `src/shared/ui/**` may import `#ui-kit`, `src/shared/ui/kit/**` or `@org/ui-kit`. Everything else imports `@/shared/ui`.
+
+---
+
+## Tokens
+
+The kit styles itself with **semantic** Tailwind classes such as `bg-primary`, `text-primary-foreground`, `border-border` and `rounded-control`, never palette classes such as `bg-blue-600`. The tokens are declared once in `app/globals.css`:
+
+```css
+@import "tailwindcss";
+
+@theme static {
+  --color-primary: oklch(54.6% 0.245 262.881); /* blue-600 */
+  --color-primary-hover: oklch(48.8% 0.243 264.376);
+  --color-primary-foreground: #fff;
+  --color-surface: #fff;
+  --color-border: oklch(92.8% 0.006 264.531);
+  /* ...full list in CONTRACT.md */
+  --radius-control: 0.375rem;
+  --radius-surface: 0.5rem;
+}
+```
+
+Tailwind v4 turns each `--color-*` into `bg-*`, `text-*` and `border-*` utilities, and each `--radius-*` into `rounded-*`. `static` makes Tailwind always emit the variables, so a kit's own CSS can use `var(--color-primary)` too.
+
+To re-brand, change the values. To adopt a package's tokens, point the values at its variables:
+
+```css
+@import "tailwindcss";
+@import "@org/ui-kit/tokens.css";
+
+@theme static {
+  --color-primary: var(--org-color-primary);
+  --color-surface: var(--org-color-surface);
+  --radius-control: var(--org-radius-sm);
+}
+```
+
+If the package only exports a JS `tokens` object, copy the values in and note the source token name in a comment (`/* tokens.color.primary */`) so updates are easy to track.
+
+App code outside the kit should also use semantic classes, so a re-brand reaches it.
+
+---
+
+## Link: data-saving prefetch
+
+`Link` from `@/shared/ui` wraps `next/link`. By default `next/link` prefetches every link that scrolls into view, which spends data the user didn't ask for on slow or metered connections. The adapter turns prefetch off when the browser reports Save-Data (`navigator.connection.saveData`) or a `slow-2g`/`2g` connection. Otherwise it passes your `prefetch` prop through unchanged.
+
+```tsx
+import { Link } from '@/shared/ui'
+
+<Link href="/reports" className="text-primary hover:underline">Reports</Link>
+```
+
+- It takes the same props as `next/link`.
+- It is a Client Component, but you can render it from Server Components.
+- The server renders it as "unconstrained", then the client corrects it after hydration, so the HTML always matches.
+- Browsers without the Network Information API (Safari, Firefox) keep the normal `next/link` behavior.
+
+Use it instead of importing `next/link` directly.
 
 ---
 
 ## Writing a new adapter
 
-There are two adapter types. Pick the right one based on whether the component uses event handlers or hooks.
+1. Add the primitive to the kit (`src/shared/ui/kit/<name>/Badge.tsx`) and export it from the kit's `index.ts`. Use semantic token classes and `cn()`.
+2. Add the props to `CONTRACT.md`.
+3. Add the adapter:
 
-### Interactive adapter ("use client")
+   ```tsx
+   // src/shared/ui/Badge/Badge.tsx
+   import { Badge as KitBadge } from '#ui-kit'
 
-Use this for any component that has event handlers, refs, or consumes hooks: `Button`, `Input`, `Select`, `Checkbox`, `Modal`, etc.
+   export interface BadgeProps {
+     label: string
+     variant?: 'default' | 'danger'
+     className?: string
+   }
 
-```tsx
-// src/shared/ui/Input/Input.tsx
-'use client'
+   export function Badge({ label, variant = 'default', className }: BadgeProps) {
+     return <KitBadge variant={variant} className={className}>{label}</KitBadge>
+   }
+   ```
 
-import { Input as OrgInput } from '@your-org/ui-kit'
-import type { ChangeEvent } from 'react'
+   ```ts
+   // src/shared/ui/Badge/index.ts
+   export { Badge } from './Badge'
+   export type { BadgeProps } from './Badge'
+   ```
 
-export interface InputProps {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  disabled?: boolean
-  id?: string
-}
+4. Re-export it from `src/shared/ui/index.ts`.
+5. Add `Badge.test.tsx` next to it to test the prop mapping.
 
-export function Input({ value, onChange, placeholder, disabled, id }: InputProps) {
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    onChange(e.target.value)
-  }
+Mark the adapter `'use client'` when it takes event handlers or the kit component uses hooks (`Button`, `Input`, `Modal`). Leave it a Server Component when it only renders data (`Card`, `Badge`). If you're unsure whether a package component is client-only, use `'use client'`.
 
-  return (
-    <OrgInput
-      id={id}
-      value={value}
-      onChange={handleChange}
-      placeholder={placeholder}
-      disabled={disabled}
-    />
-  )
-}
-```
+Every kit you add later must export the new name too. The build fails if one doesn't.
 
-```ts
-// src/shared/ui/Input/index.ts
-export { Input } from './Input'
-export type { InputProps } from './Input'
-```
+### Extending an adapter
 
-### Presentational adapter (Server Component)
-
-Use this for components that only receive data and render it — no event handlers, no hooks: `Card`, `Badge`, `Avatar`, `Tag`, etc. Omit `"use client"` so the component remains a Server Component and its output is never hydrated.
+Behavior the kit lacks (e.g. a `loading` state on `Button`) belongs in the adapter. Document it with a JSDoc comment and don't pass unknown props through to the kit component.
 
 ```tsx
-// src/shared/ui/Badge/Badge.tsx
-import { Badge as OrgBadge } from '@your-org/ui-kit'
-import { cn } from '@/shared/utils'
-
-export interface BadgeProps {
-  label: string
-  variant?: 'default' | 'success' | 'warning' | 'danger'
-  className?: string
-}
-
-export function Badge({ label, variant = 'default', className }: BadgeProps) {
-  return (
-    <OrgBadge
-      label={label}
-      variant={variant}
-      className={cn(className)}
-    />
-  )
-}
-```
-
-```ts
-// src/shared/ui/Badge/index.ts
-export { Badge } from './Badge'
-export type { BadgeProps } from './Badge'
-```
-
-### File layout
-
-Every adapter follows the same directory shape:
-
-```
-src/shared/ui/
-  ComponentName/
-    ComponentName.tsx   <- adapter implementation
-    index.ts            <- re-exports the component and its Props type
-```
-
----
-
-## RSC compatibility
-
-Assume every component in `@org/ui-kit` is a Client Component unless the package's documentation explicitly states otherwise. This means:
-
-- When wrapping an interactive primitive, mark the adapter `"use client"`.
-- When wrapping a presentational primitive, you may leave the adapter as a Server Component — but only if you are confident the underlying component contains no hooks or browser APIs.
-
-If you are unsure, default to `"use client"`. Adding it to a component that did not need it is a minor performance cost. Omitting it from a component that does need it is a runtime error.
-
----
-
-## Extending adapters
-
-Sometimes the app needs behavior that `@org/ui-kit` does not provide. Add the extra prop to the adapter's interface and handle it locally — do not leak it to the underlying component.
-
-The following example adds a `loading` prop to `Button` that `@org/ui-kit` does not have:
-
-```tsx
-// src/shared/ui/Button/Button.tsx
-'use client'
-
-import { Button as OrgButton } from '@your-org/ui-kit'
-import type { ReactNode } from 'react'
-import { cn } from '@/shared/utils'
-
 export interface ButtonProps {
-  children: ReactNode
-  onClick?: () => void
-  variant?: 'primary' | 'secondary' | 'ghost'
-  disabled?: boolean
-  type?: 'button' | 'submit' | 'reset'
-  /** furio-kit extension: shows a spinner and disables the button */
+  // ...
+  /** furio-kit extension: disables the button and shows a busy state */
   loading?: boolean
-  className?: string
 }
 
-export function Button({
-  children,
-  variant = 'primary',
-  type = 'button',
-  disabled,
-  onClick,
-  loading = false,
-  className,
-}: ButtonProps) {
+export function Button({ loading = false, disabled, className, children, ...rest }: ButtonProps) {
   return (
-    <OrgButton
-      variant={variant}
-      type={type}
-      disabled={disabled || loading}
-      onClick={onClick}
-      className={cn(loading && 'opacity-75 cursor-wait', className)}
-    >
-      {loading ? <span aria-hidden>...</span> : children}
-    </OrgButton>
+    <KitButton {...rest} disabled={disabled || loading} className={cn(loading && 'cursor-wait', className)}>
+      {children}
+    </KitButton>
   )
 }
-```
-
-Guidelines for extensions:
-
-- Document the extension with a JSDoc comment so the next developer knows it is not part of `@org/ui-kit`.
-- Keep extensions minimal. If the behavior is complex, consider a dedicated feature component that wraps the adapter.
-- Never pass unknown props through to `OrgButton` — it may warn or error at runtime.
-
----
-
-## Token and theme integration
-
-Design systems expose their visual tokens either as a `tokens` export or as CSS custom properties. Both approaches integrate with Tailwind v4 through `app/globals.css`.
-
-### CSS custom properties (most common)
-
-If `@org/ui-kit` ships a stylesheet that declares CSS variables, import it in `app/globals.css` and reference the variables directly in Tailwind utilities:
-
-```css
-/* app/globals.css */
-@import "tailwindcss";
-@import "@your-org/ui-kit/tokens.css";
-
-@theme {
-  --color-brand-primary: var(--org-color-primary);
-  --color-brand-secondary: var(--org-color-secondary);
-  --radius-card: var(--org-radius-md);
-}
-```
-
-After mapping the tokens, use them as Tailwind classes anywhere in the app:
-
-```tsx
-<div className="bg-brand-primary text-white rounded-card" />
-```
-
-### JavaScript tokens export
-
-If the package exports a `tokens` object instead of CSS variables, convert them to CSS custom properties in `app/globals.css`:
-
-```ts
-// Not usable directly in CSS — convert at build time or inline
-import { tokens } from '@your-org/ui-kit'
-```
-
-```css
-/* app/globals.css */
-@import "tailwindcss";
-
-@theme {
-  --color-brand-primary: #0055cc;   /* tokens.color.primary */
-  --color-brand-secondary: #444;    /* tokens.color.secondary */
-}
-```
-
-Keep the comment cross-referencing the token name so future updates are easy to track.
-
----
-
-## Registering a new adapter
-
-After creating an adapter, add it to the barrel file so the rest of the app can import it from `@/shared/ui`:
-
-```ts
-// src/shared/ui/index.ts
-export { Button } from './Button'
-export type { ButtonProps } from './Button'
-export { Card } from './Card'
-export type { CardProps } from './Card'
-export { Badge } from './Badge'      // <- add new adapters here
-export type { BadgeProps } from './Badge'
-export { Input } from './Input'
-export type { InputProps } from './Input'
-```
-
-Consumers import from the barrel, never from the adapter file directly:
-
-```ts
-import { Badge, Button, Input } from '@/shared/ui'   // correct
-import { Badge } from '@/shared/ui/Badge/Badge'       // forbidden
 ```
 
 ---
 
 ## Rules summary
 
-These rules are enforced in CI. Pull requests that violate them will fail the lint check.
-
 | Rule | Rationale |
 |---|---|
-| Never import `@org/ui-kit` outside `src/shared/ui/` | Keeps the design system dependency contained; a single layer to update when the package changes |
-| Mark adapters `"use client"` for interactive primitives | Prevents RSC hydration errors at runtime |
-| Use `cn()` from `@/shared/utils` for all `className` composition | Handles Tailwind class conflicts correctly; never use template literals |
-| Every adapter must be re-exported from `src/shared/ui/index.ts` | Enforces the single import path for consumers |
-| Adapter `Props` interfaces use named exports | Allows consumers to type props without importing the component itself |
+| Only `src/shared/ui/**` imports `#ui-kit`, `src/shared/ui/kit/**` or `@org/ui-kit` | The kit can be swapped without touching the rest of the app |
+| Consumers import from `@/shared/ui`, never from an adapter file | One import path, one public API |
+| Kit components use semantic token classes only | Re-branding means changing `globals.css`, not every component |
+| Use `cn()` from `@/shared/utils` for all `className` composition | Handles Tailwind class conflicts; never template literals |
+| Use `Link` from `@/shared/ui`, not `next/link` | Respects Save-Data and 2G connections |
+| Every adapter is re-exported from `src/shared/ui/index.ts` with its `Props` type | Consumers can type props without importing the component |
+
+### Upgrading from the connection flag
+
+Earlier versions used `NEXT_PUBLIC_UI_KIT_CONNECTED=true` to make placeholder adapters throw at render time until you hand-edited each one. That flag no longer does anything. Swapping kits is now a build-time alias change, and a kit that doesn't satisfy the contract fails the build instead. Remove the variable from your environments.
