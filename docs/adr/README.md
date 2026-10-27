@@ -7,7 +7,7 @@ Each ADR was derived from a full architectural review conducted on 2026-05-22.
 
 | Status | Meaning |
 |---|---|
-| **Done** | Decision identified, not yet implemented |
+| **Proposed** | Decision identified, not yet implemented |
 | **Accepted** | Agreed upon, implementation in progress |
 | **Done** | Fully implemented and verified |
 | **Rejected** | Consciously ruled out — reason documented |
@@ -25,6 +25,8 @@ Each ADR was derived from a full architectural review conducted on 2026-05-22.
 | [006](006-observability-foundation.md) | Observability Foundation: Request IDs, Structured Logging, Error Tracking | Done | Medium |
 | [007](007-ci-completeness.md) | CI Completeness: Production Build and Dependabot Guards | Done | High |
 | [008](008-internationalisation.md) | Internationalisation Foundation | Done | Low |
+| [009](009-framework-and-js-floor.md) | Framework Choice and the JavaScript Floor | Accepted | High |
+| [010](010-csp-and-nonces.md) | Content Security Policy and Nonces | Accepted | Medium |
 
 ## Review context
 

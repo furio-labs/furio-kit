@@ -9,7 +9,7 @@
 Feature-Sliced Design organizes code into layers. Each layer has a defined responsibility, and imports only flow **downward** — a layer may use code from layers below it, never from layers above or beside it.
 
 ```
-app          Next.js routing, root layouts, global providers
+app          Next.js routing, layouts, route-group providers
   views      Full route screens; own Suspense boundaries
     widgets  Self-contained page sections (Header, Sidebar, DashboardCard)
       features  Single user interactions (LoginForm, AddToCartButton)
@@ -83,7 +83,7 @@ entities/user/
   index.ts        <- only export what external layers need
 ```
 
-The `index.ts` controls the public surface of the slice. Internal files can be refactored, moved, or renamed without breaking callers. This contract is enforced by CI — builds fail on deep imports.
+The `index.ts` controls the public surface of the slice. Internal files can be refactored, moved, or renamed without breaking callers. This contract is enforced by CI — builds fail on deep imports. Run `pnpm check:arch` locally to check the import graph (layer direction, cross-slice and deep imports) with dependency-cruiser (MIT).
 
 ---
 
@@ -201,12 +201,12 @@ Each FSD layer has a typical rendering posture. These are defaults, not rigid ru
 
 | Layer | Default rendering | Rationale |
 |---|---|---|
-| `shared/ui` adapters | `"use client"` for interactive primitives; Server Component for presentational ones | Wraps `@org/ui-kit` components which are assumed to be Client Components unless stated otherwise |
+| `shared/ui` adapters | `"use client"` for interactive primitives; Server Component for presentational ones | Wraps kit components imported from `#ui-kit` (a source kit in `src/shared/ui/kit/default/` or a re-export of `@org/ui-kit`), assumed to be Client Components unless stated otherwise |
 | `entities/*/ui` | Server Components | Domain UI typically reads and displays data; async Server Components own their own fetch and participate in Suspense streaming |
 | `features/*/ui` | Client Components | User interactions (form state, click handlers) nearly always require hooks |
 | `widgets/*/ui` | Server Components | Page sections orchestrate layout and pass data as props to inner Client Components |
 | `views/` | Server Components | Full screens compose widgets; own `<Suspense>` boundaries for streaming |
-| `app/` | Server Components | Root layouts, providers wiring, routing — orchestration only |
+| `app/` | Server Components | Layouts, route-group providers (only under `(interactive)`), routing — orchestration only |
 
 The `<Suspense>` boundary is the streaming seam. Place it in `views/` or `widgets/` around async Server Components. Each async Server Component inside a Suspense boundary can stream independently as its data resolves.
 
@@ -233,38 +233,50 @@ Each suspended section streams independently. The page is interactive as soon as
 
 ## 9. App Router Route Groups
 
-furio-kit uses Next.js [route groups](https://nextjs.org/docs/app/building-your-application/routing/route-groups) to scope layouts and providers without affecting URL paths.
+furio-kit uses Next.js [route groups](https://nextjs.org/docs/app/building-your-application/routing/route-groups) to scope layouts and providers without affecting URL paths. The group a route lives in decides how much JavaScript it ships — see [ADR-009](../adr/009-framework-and-js-floor.md) and [Performance](./10-performance.md).
 
 ### Group structure
 
 ```
 app/
-  layout.tsx           ← root layout: pure HTML shell (<html>, <body>, globals.css)
-  (app)/               ← authenticated area — route group, no URL segment
-    layout.tsx         ← mounts StoreProvider, QueryProvider, Header
-    page.tsx           ← / (dashboard home)
-    error.tsx          ← error boundary for authenticated routes
-    loading.tsx        ← Suspense fallback for authenticated routes
-  (auth)/              ← unauthenticated area — login, forgot password, etc.
-    layout.tsx         ← minimal shell, no providers or header
+  layout.tsx              ← root layout: pure HTML shell (<html>, <body>, globals.css)
+  (app)/                  ← authenticated, read-only routes — no URL segment
+    layout.tsx            ← provider-free shell: Header + <main>
+    page.tsx              ← / (home)
+    error.tsx             ← error boundary for authenticated routes
+    loading.tsx           ← Suspense fallback for authenticated routes
+    (interactive)/        ← authenticated routes that need client state or cache
+      layout.tsx          ← mounts StoreProvider + QueryProvider
+  (auth)/                 ← auth pages — login, forgot password, etc.
     login/
       page.tsx
 ```
 
+### Which group a route goes in
+
+| Group | Use for | Providers |
+|---|---|---|
+| `(app)` | Authenticated pages that show data; forms that post to a Server Action | None |
+| `(app)/(interactive)` | Pages that use Zustand (`useUIStore`, `usePermission`) or TanStack Query | `StoreProvider` + `QueryProvider` |
+| `(auth)` | Sign-in flow | None |
+
+Start in `(app)`. Move a route to `(interactive)` only when it needs the providers. `pnpm generate route` asks this question when it creates a route.
+
 ### Why route groups matter
 
-**Provider scoping** — `StoreProvider` and `QueryProvider` are mounted in `app/(app)/layout.tsx`, not in the root layout. This means:
-- The root layout (`app/layout.tsx`) is a pure HTML shell with no client-side JavaScript.
-- Providers are only initialized for authenticated routes. The login page and other public routes have no Zustand store or TanStack Query context to initialize.
+**Provider scoping** — `StoreProvider` and `QueryProvider` are mounted in `app/(app)/(interactive)/layout.tsx`, not in the root layout or the `(app)` shell. This means:
+- Read-only routes do not ship the Zustand and TanStack Query code (~9 KB gzip measured).
+- `useUIStore` and `usePermission` throw outside `(interactive)`, because there is no `StoreProvider` above them.
+- No layout removes the Next.js framework floor (~133 KB gzip per page). Route groups control only what sits above it.
 
-**Separate layouts without URL segments** — `(app)` and `(auth)` do not appear in the URL. A file at `app/(app)/settings/page.tsx` resolves to `/settings`, and `app/(auth)/login/page.tsx` resolves to `/login`. The grouping is purely organizational.
+**Separate layouts without URL segments** — `(app)`, `(interactive)` and `(auth)` do not appear in the URL. `app/(app)/settings/page.tsx` resolves to `/settings`, `app/(app)/(interactive)/orders/page.tsx` to `/orders`, and `app/(auth)/login/page.tsx` to `/login`.
 
-**Error and loading boundaries** — `app/(app)/error.tsx` and `app/(app)/loading.tsx` apply only to authenticated routes. A crash in the authenticated area does not affect the login page, and vice versa.
+**Error and loading boundaries** — `app/(app)/error.tsx` and `app/(app)/loading.tsx` apply to all authenticated routes, including `(interactive)`. A crash in the authenticated area does not affect the login page, and vice versa.
 
 ### Root layout is a shell only
 
 ```tsx
-// app/layout.tsx — no providers, no Header, no client code
+// app/layout.tsx — no providers, no Header
 import type { ReactNode } from 'react'
 import './globals.css'
 
@@ -277,4 +289,4 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-All providers and shared UI (like `<Header>`) belong in `app/(app)/layout.tsx`.
+`<Header>` belongs in `app/(app)/layout.tsx`. Providers belong in `app/(app)/(interactive)/layout.tsx`.
