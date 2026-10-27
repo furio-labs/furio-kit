@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.3.0](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.2.2...furio-kit-v0.3.0) (2026-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auth:** NEXT_PUBLIC_API_URL is replaced by the server-only API_URL. usePermission must be imported from @/shared/auth/client and server helpers from @/shared/auth/server; the @/shared/auth barrel no longer exports authAdapter or usePermission. loginAction now takes (formData) and redirects instead of returning LoginActionState (type removed). Auth0/Ping adapters build their callback URL from APP_BASE_URL.
+* **ui:** NEXT_PUBLIC_UI_KIT_CONNECTED no longer has any effect; adapters never throw at runtime. Connect a design system by pointing the #ui-kit entry in package.json "imports" at a kit that satisfies src/shared/ui/kit/CONTRACT.md. A missing export fails tsc and next build.
+
+### Features
+
+* **auth:** select auth adapter via AUTH_PROVIDER, split server/client entry points ([30f93a8](https://github.com/furio-labs/furio-kit/commit/30f93a8dca2a7c139e3890c87656a806d4498739))
+* split route groups by JS cost and add route/adapter generators ([ee5872f](https://github.com/furio-labs/furio-kit/commit/ee5872fe0e7bd2a7a14b9e7770c3b154c7502606))
+* **ui:** swap design systems through the #ui-kit alias ([1b58d4f](https://github.com/furio-labs/furio-kit/commit/1b58d4ffb190f24825e036baf346ad3d883be76f))
+
+
+### Bug Fixes
+
+* match script tags case-insensitively in the budget cross-check ([cf02532](https://github.com/furio-labs/furio-kit/commit/cf02532824c3c24224a1150bc718a913e06d19df))
+
+
+### Build System
+
+* add @swc/core so dependency-cruiser can parse TypeScript ([afefab3](https://github.com/furio-labs/furio-kit/commit/afefab350395778fc72dc7c02ee1050d1e2e709d))
+* add boundary, import-graph and budget tooling scaffolding ([0514661](https://github.com/furio-labs/furio-kit/commit/05146612f912d2882abe6981c58aa7eddd6d9ebc))
+
+
+### Code Refactoring
+
+* finish semantic tokens and wire integration follow-ups ([492467e](https://github.com/furio-labs/furio-kit/commit/492467e0280217c4f6c737e755b6687d0b77d3b9))
+
+
+### Performance
+
+* keep shared adapters server-side so they cost no client JS ([6bf4781](https://github.com/furio-labs/furio-kit/commit/6bf4781a32a02290cc4bed3cb23a0ac705c85305))
+
+
+### Documentation
+
+* add framework/JS-floor and CSP ADRs, performance guide ([4d29307](https://github.com/furio-labs/furio-kit/commit/4d29307ce7448404a0ac8bf8738718050775b12f))
+* refresh wiki for current toolchain ([137ebc8](https://github.com/furio-labs/furio-kit/commit/137ebc80652679a8c4317c6e7dfe6fadf1fa9cb0))
+* update assistant instructions for bundle-first architecture ([2d9dee1](https://github.com/furio-labs/furio-kit/commit/2d9dee16668a48398ff0e610ce6292afd8624eba))
+
 ## [0.2.2](https://github.com/furio-labs/furio-kit/compare/furio-kit-v0.2.1...furio-kit-v0.2.2) (2026-10-27)
 
 
