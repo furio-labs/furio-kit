@@ -335,7 +335,7 @@ useEffect(() => { setMounted(true) }, [])
 | `audit.yml` | Weekly vulnerability scan (`pnpm audit --audit-level=high`) |
 | `codeql.yml` | CodeQL security analysis |
 | `architecture-guard.yml` | Import-graph rules via dependency-cruiser (`pnpm check:arch`): FSD layer direction, cross-slice and deep imports, `@org/ui-kit` / `#ui-kit` boundaries, server-only auth, cycles; plus barrel exports (`scripts/check-barrels.mjs`) |
-| `dependabot-auto.yml` | Auto-merge patch/minor Dependabot PRs; labels major bumps `needs-review` |
+| `dependabot-auto.yml` | Labels major Dependabot bumps `needs-review`; merges nothing (patch/minor PRs are merged by hand) |
 | `stale.yml` | Auto-close inactive PRs (14 days stale + 7 days to close) |
 
 ### Claude Code Hooks (optional - active when Claude Code is installed)
