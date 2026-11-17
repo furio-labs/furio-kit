@@ -187,6 +187,7 @@ module.exports = {
           ...NOT_RUNTIME,
           '^app/', // route files are entry points, found by the Next.js router
           '^(proxy|instrumentation)\\.ts$',
+          '^src/shared/types/', // shared types scaffold for adopters; unused until an entity needs it
         ],
       },
       to: {},

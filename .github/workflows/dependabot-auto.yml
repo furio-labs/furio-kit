@@ -2,15 +2,14 @@ name: Dependabot Triage
 
 # Flags major-version bumps for human review. It does not merge anything.
 #
-# Auto-merge was removed deliberately: GitHub's auto-merge only engages when a
-# PR has a pending requirement (a required status check or review). `main` has
-# no branch protection, so `gh pr merge --auto` had nothing to wait on and the
-# steps never succeeded. Re-adding them without branch protection would merge
-# dependency PRs before CI reports, which is worse than merging by hand.
+# Auto-merge was removed when `main` had no branch protection, so
+# `gh pr merge --auto` had nothing to wait on. `main` is now covered by the
+# `main-protection` ruleset (both CI matrix checks, one approving review), but
+# auto-merge is still off: the repository has `allow_auto_merge` disabled, and
+# the required review would block Dependabot PRs anyway.
 #
-# To restore auto-merge: protect `main`, require both CI matrix checks
-# ("Typecheck · Lint · Test · Build (Node 22)" and "(Node 24)"), enable
-# `allow_auto_merge` on the repository, then add the merge steps back.
+# To restore auto-merge: enable `allow_auto_merge`, decide what supplies the
+# required review for Dependabot PRs, then add the merge steps back.
 
 on: pull_request
 

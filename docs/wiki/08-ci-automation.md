@@ -14,7 +14,7 @@ Seven workflows run in `.github/workflows/`.
 | Audit | `audit.yml` | push/PR to `main`, weekly Monday 08:00 UTC | `pnpm audit --audit-level=high` | Yes |
 | CodeQL | `codeql.yml` | push/PR to `main`, weekly Monday 08:00 UTC | GitHub CodeQL security analysis (JavaScript/TypeScript) | Yes |
 | Architecture Guard | `architecture-guard.yml` | PR to `main` | Import-graph rules via dependency-cruiser (`pnpm check:arch`): FSD layers, slice isolation, public APIs, UI kit and server-only boundaries, cycles; barrel exports | Yes |
-| Dependabot Auto-Merge | `dependabot-auto.yml` | Any Dependabot PR | Auto-merges patch/minor, labels major for review | No (enables auto-merge) |
+| Dependabot Triage | `dependabot-auto.yml` | Any Dependabot PR | Labels major bumps `needs-review`; merges nothing | No |
 | Stale | `stale.yml` | Daily 06:00 UTC | Labels PRs/issues inactive for 14 days, closes after 7 more | N/A |
 | Release Please | `release-please.yml` | push to `main` | Opens/updates a Release PR that bumps `package.json` version and updates `CHANGELOG.md`; merging the PR creates a GitHub Release and tag | No |
 
@@ -38,7 +38,7 @@ A merge to `main` is blocked if any of the following fail:
 - **Circular or unresolvable imports** (`architecture-guard.yml`)
 - **Missing barrel exports** — a slice under `entities/`, `features/`, `widgets/` or `views/` has no `index.ts` (`architecture-guard.yml`)
 
-Stale and Dependabot Auto-Merge do not block merge.
+Stale and Dependabot Triage do not block merge.
 
 ---
 
@@ -148,17 +148,18 @@ Per-route overrides go in `routes`, keyed by URL path, each with a `reason`. To 
 
 ---
 
-## 4. Dependabot auto-merge
+## 4. Dependabot triage
 
-`dependabot-auto.yml` runs on every Dependabot PR. Behavior depends on the semver update type:
+`dependabot-auto.yml` runs on every Dependabot PR. It merges nothing:
 
 | Update type | Behavior |
 |---|---|
-| Patch | Auto-merge via `gh pr merge --auto --squash` immediately |
-| Minor | Auto-merge if the PR body contains no `BREAKING`, `breaking change`, or `deprecated` keywords |
+| Patch / Minor | No action. Merge by hand once CI is green |
 | Major | Adds `needs-review` label and posts a comment noting the version range and asking for manual review |
 
-Auto-merge uses `--auto`, which means the merge happens after all required status checks pass — the CI, Audit, and CodeQL workflows must green first.
+Auto-merge is off. The `main-protection` ruleset requires one approving review plus the Node 22 and Node 24 CI checks, and the repository has `allow_auto_merge` disabled. Restoring auto-merge needs `allow_auto_merge` enabled, a decision on who or what supplies the required review for Dependabot PRs, and the merge steps added back to the workflow.
+
+Dependabot PRs carry the `dependencies` label, which `stale.yml` exempts, so unmerged bumps are never auto-closed.
 
 ### Manually reviewing a major bump
 
